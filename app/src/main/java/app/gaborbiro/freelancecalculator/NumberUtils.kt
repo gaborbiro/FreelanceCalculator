@@ -8,11 +8,11 @@ import java.text.NumberFormat
 import java.text.ParsePosition
 import java.util.Locale
 
-private const val bigDecimalScale = 20
-private val bigDecimalRounding = RoundingMode.HALF_EVEN
+private const val SCALE = 2
+private val ROUNDING = RoundingMode.HALF_EVEN
 
 val DAYS_PER_YEAR: BigDecimal =
-    BigDecimal.valueOf(365.25).setScale(bigDecimalScale, bigDecimalRounding)
+    BigDecimal.valueOf(365.25).setScale(SCALE, ROUNDING)
 
 val WEEKS_PER_YEAR = DAYS_PER_YEAR / BigDecimal.valueOf(7) // 52.18
 
@@ -20,19 +20,14 @@ val WEEKS_PER_MONTH =
     DAYS_PER_YEAR / BigDecimal.valueOf(7) / BigDecimal.valueOf(12) // 4.35
 
 private val locale = Locale.getDefault()
-private val numberFormat = (NumberFormat.getNumberInstance(locale) as DecimalFormat).also {
+private val parsingFormat = (NumberFormat.getNumberInstance(locale) as DecimalFormat).also {
     it.isParseBigDecimal = true
 }
-private val groupedFormat = NumberFormat.getNumberInstance(locale).also {
-    it.isGroupingUsed = true
-    it.minimumFractionDigits = 0
-    it.maximumFractionDigits = 0
-} as DecimalFormat
 
 fun BigDecimal?.format(decimalCount: Int): String {
     val format = NumberFormat.getNumberInstance(locale).also {
         it.isGroupingUsed = true
-        it.minimumFractionDigits = decimalCount
+        it.minimumFractionDigits = 0
         it.maximumFractionDigits = decimalCount
     }
     return this
@@ -41,21 +36,27 @@ fun BigDecimal?.format(decimalCount: Int): String {
         ?: ""
 }
 
-fun String.formatWithCommas(): String {
+private val groupedFormat = NumberFormat.getNumberInstance(locale).also {
+    it.isGroupingUsed = true
+    it.minimumFractionDigits = 0
+    it.maximumFractionDigits = 0
+} as DecimalFormat
+
+fun String.ensureGrouping(): String {
     val decimalSeparator = groupedFormat.decimalFormatSymbols.decimalSeparator
     val indexOfDecimalSeparator = indexOf(decimalSeparator)
     return when {
         indexOfDecimalSeparator > -1 -> {
             val integerPart = substring(0, indexOfDecimalSeparator)
-            val decimalPart = substring(indexOfDecimalSeparator)
-            numberFormat.strictParse(integerPart)
+            val tail = substring(indexOfDecimalSeparator)
+            parsingFormat.strictParse(integerPart)
                 ?.toLong()
-                ?.let { groupedFormat.format(it) + decimalPart }
+                ?.let { groupedFormat.format(it) + tail }
                 ?: this
         }
 
         else -> {
-            numberFormat.strictParse(this)
+            parsingFormat.strictParse(this)
                 ?.toLong()
                 ?.let { groupedFormat.format(it) }
                 ?: this
@@ -63,31 +64,41 @@ fun String.formatWithCommas(): String {
     }
 }
 
-fun String?.parse(): BigDecimal? {
+fun String?.strictParse(): BigDecimal? {
     return this
         ?.trim()
-        ?.let { numberFormat.strictParse(this) }
+        ?.let { parsingFormat.strictParse(this) }
 }
 
 private fun DecimalFormat.strictParse(text: String): BigDecimal? = runCatching {
     val parsePosition = ParsePosition(0)
-    val result = numberFormat.parse(text, parsePosition)
-    if (parsePosition.index == text.length) {
-        (result as BigDecimal).setScale(bigDecimalScale, bigDecimalRounding)
-    } else {
+    val result = parsingFormat.parse(text, parsePosition)
+    if (parsePosition.index != text.length) {
         null// not all of the text was consumed, there's some illegal character
+    } else {
+        (result as BigDecimal).setScale(SCALE, ROUNDING)
     }
 }.getOrNull()
 
+fun String.tryGrouping(): String {
+    return this
+        .trim()
+        .let { text ->
+            parsingFormat.strictParse(text)
+                ?.let { text.ensureGrouping() }
+                ?: text
+        }
+}
+
 operator fun BigDecimal?.times(other: BigDecimal?): BigDecimal? {
     return safelyCalculate(this, other) { dis, other ->
-        BigDecimalUtils().multiply(dis, other).setScale(bigDecimalScale, bigDecimalRounding)
+        BigDecimalUtils().multiply(dis, other).setScale(SCALE, ROUNDING)
     }
 }
 
 operator fun BigDecimal?.div(other: BigDecimal?): BigDecimal? {
     return safelyCalculate(this, other) { dis, other ->
-        BigDecimalUtils().divide(dis, other).setScale(bigDecimalScale, bigDecimalRounding)
+        BigDecimalUtils().divide(dis, other).setScale(SCALE, ROUNDING)
     }
 }
 

@@ -9,26 +9,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.Container
 import app.gaborbiro.freelancecalculator.ui.view.InputField
+import java.math.BigDecimal
 
-@ExperimentalMaterial3Api
-@Composable
-fun SingleInputContainerContent(
-    modifier: Modifier,
-    label: String,
-    value: String,
-    decimalCount: Int,
-    clearButtonVisible: Boolean,
-    onValueChange: (value: String) -> Unit,
-) {
-    InputField(
-        modifier = modifier,
-        label = label,
-        value = value,
-        decimalCount = decimalCount,
-        clearButtonVisible = clearButtonVisible,
-        onValueChange = onValueChange,
-    )
-}
 
 @ExperimentalMaterial3Api
 @Composable
@@ -36,24 +18,22 @@ fun SingleInputContainer(
     containerModifier: Modifier,
     label: String,
     value: String,
-    decimalCount: Int,
     clearButtonVisible: Boolean = false,
     selected: Boolean,
     onSelected: () -> Unit,
-    onValueChange: (value: String) -> Unit,
+    onValueChange: (value: BigDecimal?) -> Unit,
 ) {
     Container(
         modifier = containerModifier,
         selected = selected,
         onSelected = onSelected,
     ) { modifier ->
-        SingleInputContainerContent(
+        FocusPinnedInputField(
             modifier = modifier,
             label = label,
             value = value,
-            decimalCount = decimalCount,
             clearButtonVisible = clearButtonVisible,
-            onValueChange = onValueChange
+            onValueChange = onValueChange,
         )
     }
 }
@@ -68,7 +48,6 @@ private fun SingleInputContainerPreview() {
             .padding(MARGIN_LARGE),
         label = "Fee per hour",
         value = "80.00",
-        decimalCount = 2,
         clearButtonVisible = true,
         selected = true,
         onSelected = { },

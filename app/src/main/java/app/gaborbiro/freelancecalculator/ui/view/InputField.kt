@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextRange
@@ -28,7 +29,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import app.gaborbiro.freelancecalculator.DecimalDecorator
+import app.gaborbiro.freelancecalculator.DecimalGroupingDecorator
 import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_MEDIUM
 
 @ExperimentalMaterial3Api
@@ -37,8 +38,8 @@ fun InputField(
     modifier: Modifier = Modifier,
     label: String,
     value: String,
-    decimalCount: Int,
     clearButtonVisible: Boolean = false,
+    onFocusChanged: ((isFocused: Boolean) -> Unit)? = null,
     onValueChange: (value: String) -> Unit
 ) {
     val customTextSelectionColors = TextSelectionColors(
@@ -48,7 +49,10 @@ fun InputField(
     CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
         BasicTextField(
             modifier = modifier
-                .padding(MARGIN_MEDIUM),
+                .padding(MARGIN_MEDIUM)
+                .onFocusChanged {
+                    onFocusChanged?.invoke(it.isFocused)
+                },
             value = TextFieldValue(value, selection = TextRange(value.length)),
             textStyle = MaterialTheme.typography.bodyMedium
                 .merge(TextStyle(color = LocalContentColor.current)),
@@ -57,7 +61,7 @@ fun InputField(
             onValueChange = {
                 onValueChange(it.text)
             },
-            visualTransformation = DecimalDecorator(decimalCount),
+            visualTransformation = DecimalGroupingDecorator(),
             cursorBrush = SolidColor(LocalContentColor.current),
         ) {
             TextFieldDefaults.TextFieldDecorationBox(
@@ -100,7 +104,7 @@ private fun InputFieldPreview() {
         modifier = Modifier,
         label = "Input Field Label",
         value = "123.1453",
-        decimalCount = 2,
+        onFocusChanged = { },
         onValueChange = { },
     )
 }

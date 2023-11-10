@@ -6,22 +6,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.WEEKS_PER_MONTH
 import app.gaborbiro.freelancecalculator.WEEKS_PER_YEAR
 import app.gaborbiro.freelancecalculator.div
 import app.gaborbiro.freelancecalculator.format
-import app.gaborbiro.freelancecalculator.parse
 import app.gaborbiro.freelancecalculator.times
 import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.Container
 import app.gaborbiro.freelancecalculator.ui.view.FlowCard
-import app.gaborbiro.freelancecalculator.ui.view.InputField
 import java.math.BigDecimal
 
 
@@ -32,73 +26,39 @@ fun MoneyOverTimeContent(
     daysPerWeek: BigDecimal?,
     onMoneyPerWeekChange: (value: BigDecimal?) -> Unit,
 ) {
-    val perMonth by rememberSaveable(moneyPerWeek) {
-        mutableStateOf(moneyPerWeek * WEEKS_PER_MONTH)
-    }
-    InputFieldWrapper(
+    FocusPinnedInputField(
+        modifier = Modifier
+            .wrapContentSize(),
         label = "Total per month",
+        value = (moneyPerWeek * WEEKS_PER_MONTH).format(decimalCount = 0),
         clearButtonVisible = true,
-        value = perMonth,
-        decimalCount = 0,
-    ) {
-        onMoneyPerWeekChange(it / WEEKS_PER_MONTH)
+    ) { newValue ->
+        onMoneyPerWeekChange(newValue / WEEKS_PER_MONTH)
     }
-
-    val perYear by rememberSaveable(moneyPerWeek) {
-        mutableStateOf(moneyPerWeek * WEEKS_PER_YEAR)
-    }
-    InputFieldWrapper(
+    FocusPinnedInputField(
+        modifier = Modifier
+            .wrapContentSize(),
         label = "per year",
-        value = perYear,
-        decimalCount = 0,
-    ) {
-        onMoneyPerWeekChange(it / WEEKS_PER_YEAR)
+        value = (moneyPerWeek * WEEKS_PER_YEAR).format(decimalCount = 0),
+    ) { newValue ->
+        onMoneyPerWeekChange(newValue / WEEKS_PER_YEAR)
     }
-
-    InputField(
+    FocusPinnedInputField(
         modifier = Modifier
             .wrapContentSize(),
         label = "per week",
-        value = moneyPerWeek.format(0),
-        decimalCount = 0,
-        onValueChange = { value ->
-            onMoneyPerWeekChange(value.parse())
-        },
-    )
-
-    val perDay by rememberSaveable(moneyPerWeek, daysPerWeek) {
-        mutableStateOf(moneyPerWeek / daysPerWeek)
+        value = moneyPerWeek.format(decimalCount = 0),
+    ) { newValue ->
+        onMoneyPerWeekChange(newValue)
     }
-
-    InputFieldWrapper(
-        label = "per day",
-        value = perDay,
-        decimalCount = 2,
-    ) {
-        onMoneyPerWeekChange(it * daysPerWeek)
-    }
-}
-
-@ExperimentalMaterial3Api
-@Composable
-private fun InputFieldWrapper(
-    label: String,
-    value: BigDecimal?,
-    decimalCount: Int = 2,
-    clearButtonVisible: Boolean = false,
-    onValueChange: (value: BigDecimal?) -> Unit
-) {
-    InputField(
+    FocusPinnedInputField(
         modifier = Modifier
             .wrapContentSize(),
-        label = label,
-        value = value?.format(decimalCount) ?: "",
-        clearButtonVisible = clearButtonVisible,
-        decimalCount = 2,
-        onValueChange = {
-            onValueChange(it.parse())
-        },
-    )
+        label = "per day",
+        value = (moneyPerWeek / daysPerWeek).format(decimalCount = 2),
+    ) { newValue ->
+        onMoneyPerWeekChange(newValue * daysPerWeek)
+    }
 }
 
 @ExperimentalMaterial3Api
@@ -122,6 +82,7 @@ fun MoneyOverTimeSection(
         }
     }
 }
+
 
 @ExperimentalLayoutApi
 @ExperimentalMaterial3Api

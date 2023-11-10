@@ -5,10 +5,10 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 
-class DecimalDecorator(private val decimalCount: Int) : VisualTransformation {
+class DecimalGroupingDecorator : VisualTransformation {
 
     override fun filter(text: AnnotatedString): TransformedText {
-        val finalText = text.text.parse().format(decimalCount)
+        val finalText = text.text.tryGrouping()
         return TransformedText(
             text = AnnotatedString(finalText),
             offsetMapping = object : OffsetMapping {
