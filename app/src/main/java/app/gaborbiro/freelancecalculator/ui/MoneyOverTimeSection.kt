@@ -22,42 +22,60 @@ import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.Container
 import app.gaborbiro.freelancecalculator.ui.view.FlowCard
 import app.gaborbiro.freelancecalculator.ui.view.InputField
+import java.math.BigDecimal
 
 
 @ExperimentalMaterial3Api
 @Composable
 fun MoneyOverTimeContent(
-    moneyPerWeek: Double?,
-    daysPerWeek: Double?,
-    onMoneyPerWeekChange: (value: Double?) -> Unit,
+    moneyPerWeek: BigDecimal?,
+    daysPerWeek: BigDecimal?,
+    onMoneyPerWeekChange: (value: BigDecimal?) -> Unit,
 ) {
+    val perMonth by rememberSaveable(moneyPerWeek) {
+        mutableStateOf(moneyPerWeek * WEEKS_PER_MONTH)
+    }
     InputFieldWrapper(
         label = "Total per month",
         clearButtonVisible = true,
-        value = (moneyPerWeek * WEEKS_PER_MONTH).format(decimalCount = 0),
+        value = perMonth,
+        decimalCount = 0,
     ) {
-        onMoneyPerWeekChange(it.parse() / WEEKS_PER_MONTH)
+        onMoneyPerWeekChange(it / WEEKS_PER_MONTH)
+    }
+
+    val perYear by rememberSaveable(moneyPerWeek) {
+        mutableStateOf(moneyPerWeek * WEEKS_PER_YEAR)
     }
     InputFieldWrapper(
         label = "per year",
-        value = (moneyPerWeek * WEEKS_PER_YEAR).format(decimalCount = 0),
+        value = perYear,
+        decimalCount = 0,
     ) {
-        onMoneyPerWeekChange(it.parse() / WEEKS_PER_YEAR)
+        onMoneyPerWeekChange(it / WEEKS_PER_YEAR)
     }
+
     InputField(
         modifier = Modifier
             .wrapContentSize(),
         label = "per week",
         value = moneyPerWeek.format(0),
+        decimalCount = 0,
         onValueChange = { value ->
             onMoneyPerWeekChange(value.parse())
         },
     )
+
+    val perDay by rememberSaveable(moneyPerWeek, daysPerWeek) {
+        mutableStateOf(moneyPerWeek / daysPerWeek)
+    }
+
     InputFieldWrapper(
         label = "per day",
-        value = (moneyPerWeek / daysPerWeek).format(decimalCount = 2),
+        value = perDay,
+        decimalCount = 2,
     ) {
-        onMoneyPerWeekChange(it.parse() * daysPerWeek)
+        onMoneyPerWeekChange(it * daysPerWeek)
     }
 }
 
@@ -65,18 +83,20 @@ fun MoneyOverTimeContent(
 @Composable
 private fun InputFieldWrapper(
     label: String,
-    value: String,
+    value: BigDecimal?,
+    decimalCount: Int = 2,
     clearButtonVisible: Boolean = false,
-    onValueChange: (value: String) -> Unit
+    onValueChange: (value: BigDecimal?) -> Unit
 ) {
     InputField(
         modifier = Modifier
             .wrapContentSize(),
         label = label,
-        value = value,
+        value = value?.format(decimalCount) ?: "",
         clearButtonVisible = clearButtonVisible,
+        decimalCount = 2,
         onValueChange = {
-            onValueChange(it)
+            onValueChange(it.parse())
         },
     )
 }
@@ -84,13 +104,13 @@ private fun InputFieldWrapper(
 @ExperimentalMaterial3Api
 @ExperimentalLayoutApi
 @Composable
-fun MoneyOverTime(
+fun MoneyOverTimeSection(
     containerModifier: Modifier,
     selected: Boolean,
-    moneyPerWeek: Double?,
-    daysPerWeek: Double?,
+    moneyPerWeek: BigDecimal?,
+    daysPerWeek: BigDecimal?,
     onSelected: () -> Unit,
-    onMoneyPerWeekChange: (value: Double?) -> Unit,
+    onMoneyPerWeekChange: (value: BigDecimal?) -> Unit,
 ) {
     Container(
         modifier = containerModifier,
@@ -108,12 +128,12 @@ fun MoneyOverTime(
 @Preview
 @Composable
 private fun MoneyOverTimePreview() {
-    MoneyOverTime(
+    MoneyOverTimeSection(
         containerModifier = Modifier
             .fillMaxWidth()
             .padding(MARGIN_LARGE),
-        moneyPerWeek = 355.0,
-        daysPerWeek = 5.0,
+        moneyPerWeek = BigDecimal.valueOf(355.0),
+        daysPerWeek = BigDecimal.valueOf(5.0),
         onMoneyPerWeekChange = { },
         selected = true,
         onSelected = { },

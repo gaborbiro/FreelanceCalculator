@@ -19,31 +19,31 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import app.gaborbiro.freelancecalculator.format
 import app.gaborbiro.freelancecalculator.formatWithCommas
 import app.gaborbiro.freelancecalculator.parse
 import app.gaborbiro.freelancecalculator.times
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
+import java.math.BigDecimal
 
 
-private lateinit var feePerHour: MutableState<String?>
-private lateinit var hoursPerWeek: MutableState<String?>
-private lateinit var daysPerWeek: MutableState<String?>
-private lateinit var moneyPerWeek: MutableState<String?>
+private lateinit var feePerHourStr: MutableState<String?>
+private lateinit var hoursPerWeekStr: MutableState<String?>
+private lateinit var daysPerWeekStr: MutableState<String?>
+private lateinit var moneyPerWeek: MutableState<BigDecimal?>
 
 @Composable
 fun MainContent() {
     val selectedIndex = rememberSaveable { mutableStateOf(3) }
     var indexCounter = -1
 
-    feePerHour = rememberSaveable { mutableStateOf(null) }
-    hoursPerWeek = rememberSaveable { mutableStateOf(null) }
-    daysPerWeek = rememberSaveable { mutableStateOf(null) }
-    moneyPerWeek = rememberSaveable(feePerHour.value, hoursPerWeek.value) {
-        val feePerHour = feePerHour.value.parse()
-        val hoursPerWeek = hoursPerWeek.value.parse()
-        val moneyPerWeek = (feePerHour * hoursPerWeek).format(decimalCount = 2)
+    feePerHourStr = rememberSaveable { mutableStateOf(null) }
+    hoursPerWeekStr = rememberSaveable { mutableStateOf(null) }
+    daysPerWeekStr = rememberSaveable { mutableStateOf(null) }
+    moneyPerWeek = rememberSaveable(feePerHourStr.value, hoursPerWeekStr.value) {
+        val feePerHour = feePerHourStr.value.parse()
+        val hoursPerWeek = hoursPerWeekStr.value.parse()
+        val moneyPerWeek = (feePerHour * hoursPerWeek)
         mutableStateOf(moneyPerWeek)
     }
 
@@ -55,47 +55,51 @@ fun MainContent() {
         .fillMaxWidth()
         .padding(horizontal = MARGIN_LARGE)
 
+    @Suppress("KotlinConstantConditions")
     SingleInputContainer(
         containerModifier = containerModifier,
         label = "Fee per hour",
-        value = feePerHour.value ?: "",
+        value = feePerHourStr.value ?: "",
+        decimalCount = 2,
         clearButtonVisible = true,
         selected = selectedIndex.value == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
         onValueChange = { value ->
-            feePerHour.value = value.formatWithCommas()
+            feePerHourStr.value = value.formatWithCommas()
         },
     )
     SingleInputContainer(
         containerModifier = containerModifier,
         label = "Hours per week",
-        value = hoursPerWeek.value ?: "",
+        value = hoursPerWeekStr.value ?: "",
+        decimalCount = 2,
         clearButtonVisible = true,
         selected = selectedIndex.value == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
         onValueChange = { value ->
-            hoursPerWeek.value = value.formatWithCommas()
+            hoursPerWeekStr.value = value.formatWithCommas()
         },
     )
     SingleInputContainer(
         containerModifier = containerModifier,
         label = "Days per week",
-        value = daysPerWeek.value ?: "",
+        value = daysPerWeekStr.value ?: "",
+        decimalCount = 2,
         clearButtonVisible = true,
         selected = selectedIndex.value == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
         onValueChange = { value ->
-            daysPerWeek.value = value.formatWithCommas()
+            daysPerWeekStr.value = value.formatWithCommas()
         },
     )
-    MoneyOverTime(
+    MoneyOverTimeSection(
         containerModifier = containerModifier,
         selected = selectedIndex.value == ++indexCounter,
-        moneyPerWeek = moneyPerWeek.value.parse(),
-        daysPerWeek = daysPerWeek.value.parse(),
+        moneyPerWeek = moneyPerWeek.value,
+        daysPerWeek = daysPerWeekStr.value.parse(),
         onSelected = selectionUpdater(indexCounter),
         onMoneyPerWeekChange = {
-            moneyPerWeek.value = it.format(decimalCount = 2)
+            moneyPerWeek.value = it
         },
     )
 }

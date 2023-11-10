@@ -47,6 +47,7 @@ private fun FlowCardPreview() {
                 modifier = Modifier,
                 label = "Input Field",
                 value = "123.45",
+                decimalCount = 2,
                 clearButtonVisible = false,
                 onValueChange = { },
             )
@@ -54,6 +55,7 @@ private fun FlowCardPreview() {
                 modifier = Modifier,
                 label = "Input Field",
                 value = "123.45",
+                decimalCount = 2,
                 clearButtonVisible = false,
                 onValueChange = { },
             )
@@ -61,6 +63,7 @@ private fun FlowCardPreview() {
                 modifier = Modifier,
                 label = "Input Field Looooooonger",
                 value = "123.45",
+                decimalCount = 2,
                 clearButtonVisible = false,
                 onValueChange = { },
             )

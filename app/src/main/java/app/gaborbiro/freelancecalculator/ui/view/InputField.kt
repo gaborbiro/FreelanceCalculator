@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import app.gaborbiro.freelancecalculator.DecimalDecorator
 import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_MEDIUM
 
 @ExperimentalMaterial3Api
@@ -36,6 +37,7 @@ fun InputField(
     modifier: Modifier = Modifier,
     label: String,
     value: String,
+    decimalCount: Int,
     clearButtonVisible: Boolean = false,
     onValueChange: (value: String) -> Unit
 ) {
@@ -55,6 +57,7 @@ fun InputField(
             onValueChange = {
                 onValueChange(it.text)
             },
+            visualTransformation = DecimalDecorator(decimalCount),
             cursorBrush = SolidColor(LocalContentColor.current),
         ) {
             TextFieldDefaults.TextFieldDecorationBox(
@@ -96,7 +99,8 @@ private fun InputFieldPreview() {
     InputField(
         modifier = Modifier,
         label = "Input Field Label",
-        value = "123.45",
+        value = "123.1453",
+        decimalCount = 2,
         onValueChange = { },
     )
 }

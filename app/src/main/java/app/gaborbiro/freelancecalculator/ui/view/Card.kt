@@ -42,6 +42,7 @@ private fun CardPreview() {
                 modifier = Modifier.weight(1f),
                 label = "Input Field Label",
                 value = "123.45",
+                decimalCount = 2,
                 onValueChange = { },
             )
             Spacer(modifier = Modifier.width(16.dp))

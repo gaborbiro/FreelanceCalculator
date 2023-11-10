@@ -16,6 +16,7 @@ fun SingleInputContainerContent(
     modifier: Modifier,
     label: String,
     value: String,
+    decimalCount: Int,
     clearButtonVisible: Boolean,
     onValueChange: (value: String) -> Unit,
 ) {
@@ -23,6 +24,7 @@ fun SingleInputContainerContent(
         modifier = modifier,
         label = label,
         value = value,
+        decimalCount = decimalCount,
         clearButtonVisible = clearButtonVisible,
         onValueChange = onValueChange,
     )
@@ -34,6 +36,7 @@ fun SingleInputContainer(
     containerModifier: Modifier,
     label: String,
     value: String,
+    decimalCount: Int,
     clearButtonVisible: Boolean = false,
     selected: Boolean,
     onSelected: () -> Unit,
@@ -48,6 +51,7 @@ fun SingleInputContainer(
             modifier = modifier,
             label = label,
             value = value,
+            decimalCount = decimalCount,
             clearButtonVisible = clearButtonVisible,
             onValueChange = onValueChange
         )
@@ -64,6 +68,7 @@ private fun SingleInputContainerPreview() {
             .padding(MARGIN_LARGE),
         label = "Fee per hour",
         value = "80.00",
+        decimalCount = 2,
         clearButtonVisible = true,
         selected = true,
         onSelected = { },
