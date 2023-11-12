@@ -86,34 +86,35 @@ fun MoneyOverTimeSection(
             FlowCard(modifier = Modifier) {
                 MoneyOverTimeContent(moneyPerWeek, onMoneyPerWeekChange)
             }
-            FocusPinnedInputField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(MARGIN_LARGE),
-                label = "Days per week",
-                value = daysPerWeek.value.format(decimalCount = 0),
-                clearButtonVisible = true,
-                onValueChange = { value ->
-                    CoroutineScope(Dispatchers.IO).launch {
-                        store.daysPerWeek = flowOf(value)
-                    }
-                },
-            )
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(MARGIN_LARGE)
-            ) {
-                Row {
-                    FocusPinnedInputField(
-                        modifier = Modifier
-                            .wrapContentSize(),
-                        label = "per day",
-                        value = (moneyPerWeek / daysPerWeek.value).format(decimalCount = 2),
-                    ) { newValue ->
-                        onMoneyPerWeekChange(newValue * daysPerWeek.value)
+            Row {
+                FocusPinnedInputField(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .padding(bottom = MARGIN_LARGE),
+                    label = "Days per week",
+                    value = daysPerWeek.value.format(decimalCount = 0),
+                    clearButtonVisible = true,
+                    onValueChange = { value ->
+                        CoroutineScope(Dispatchers.IO).launch {
+                            store.daysPerWeek = flowOf(value)
+                        }
+                    },
+                )
+                Card(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .padding(bottom = MARGIN_LARGE)
+                ) {
+                    Row {
+                        FocusPinnedInputField(
+                            modifier = Modifier
+                                .wrapContentSize()
+                                ,
+                            label = "per day",
+                            value = (moneyPerWeek / daysPerWeek.value).format(decimalCount = 2),
+                        ) { newValue ->
+                            onMoneyPerWeekChange(newValue * daysPerWeek.value)
+                        }
                     }
                 }
             }
