@@ -102,6 +102,12 @@ operator fun BigDecimal?.div(other: BigDecimal?): BigDecimal? {
     }
 }
 
+operator fun BigDecimal?.minus(other: BigDecimal?): BigDecimal? {
+    return safelyCalculate(this, other) { dis, other ->
+        BigDecimalUtils().subtract(dis, other).setScale(SCALE, ROUNDING)
+    }
+}
+
 private fun safelyCalculate(
     first: BigDecimal?,
     second: BigDecimal?,

@@ -21,10 +21,10 @@ fun FlowCard(modifier: Modifier, content: @Composable RowScope.() -> Unit) {
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(MARGIN_LARGE)
+            .padding(top = MARGIN_LARGE, start = MARGIN_LARGE, end = MARGIN_LARGE)
     ) {
         FlowRow(
-            horizontalArrangement = Arrangement.Start,
+            horizontalArrangement = Arrangement.SpaceBetween,
             content = content,
         )
     }

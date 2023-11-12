@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.Store
+import app.gaborbiro.freelancecalculator.currency.CurrencyRepository
 import app.gaborbiro.freelancecalculator.div
 import app.gaborbiro.freelancecalculator.format
 import app.gaborbiro.freelancecalculator.times
@@ -36,7 +37,10 @@ import java.math.BigDecimal
 
 
 @Composable
-fun MainContent(store: Store) {
+fun MainContent(
+    store: Store,
+    currencyRepository: CurrencyRepository,
+) {
     val selectedIndex = rememberSaveable { mutableStateOf(2) }
     var indexCounter = -1
 
@@ -91,6 +95,7 @@ fun MainContent(store: Store) {
         selected = selectedIndex.value == ++indexCounter,
         moneyPerWeek = moneyPerWeek,
         store = store,
+        currencyRepository = currencyRepository,
         onSelected = selectionUpdater(indexCounter),
         onMoneyPerWeekChange = {
             moneyPerWeek = it
@@ -119,7 +124,10 @@ private fun MainContentPreview() {
                     .padding(vertical = MARGIN_LARGE),
                 verticalArrangement = Arrangement.spacedBy(MARGIN_LARGE),
             ) {
-                MainContent(Store.DUMMY_IMPL)
+                MainContent(
+                    Store.dummyImplementation(),
+                    CurrencyRepository.getDummyImplementation()
+                )
             }
         }
     }

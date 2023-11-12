@@ -11,4 +11,8 @@ class BigDecimalUtils {
     fun divide(a: BigDecimal, b: BigDecimal): BigDecimal {
         return a / b
     }
+
+    fun subtract(a: BigDecimal, b: BigDecimal): BigDecimal {
+        return a - b
+    }
 }
