@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
 
 @Composable
-fun Container(
+fun SelectableContainer(
     modifier: Modifier,
     selected: Boolean,
     onSelected: () -> Unit,
@@ -43,7 +43,7 @@ fun Container(
 @Preview
 @Composable
 private fun ContainerPreview() {
-    Container(
+    SelectableContainer(
         modifier = Modifier.padding(MARGIN_LARGE),
         selected = true,
         onSelected = { }) { modifier ->

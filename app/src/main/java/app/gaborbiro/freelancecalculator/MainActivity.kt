@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import app.gaborbiro.freelancecalculator.ui.MainContent
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 @ExperimentalMaterial3Api
 class MainActivity : ComponentActivity() {
@@ -35,7 +37,7 @@ class MainActivity : ComponentActivity() {
                             .padding(vertical = MARGIN_LARGE),
                         verticalArrangement = Arrangement.spacedBy(MARGIN_LARGE),
                     ) {
-                        MainContent()
+                        MainContent(StoreImpl(this@MainActivity, CoroutineScope(Dispatchers.IO)))
                     }
                 }
             }

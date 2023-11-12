@@ -35,7 +35,7 @@ fun FlowCard(modifier: Modifier, content: @Composable RowScope.() -> Unit) {
 @Preview
 @Composable
 private fun FlowCardPreview() {
-    Container(
+    SelectableContainer(
         modifier = Modifier
             .fillMaxWidth()
             .padding(MARGIN_LARGE),

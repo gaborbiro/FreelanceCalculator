@@ -7,8 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
-import app.gaborbiro.freelancecalculator.ui.view.Container
-import app.gaborbiro.freelancecalculator.ui.view.InputField
+import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
 import java.math.BigDecimal
 
 
@@ -23,7 +22,7 @@ fun SingleInputContainer(
     onSelected: () -> Unit,
     onValueChange: (value: BigDecimal?) -> Unit,
 ) {
-    Container(
+    SelectableContainer(
         modifier = containerModifier,
         selected = selected,
         onSelected = onSelected,
