@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
+import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 
 @Composable
 fun Card(modifier: Modifier, content: @Composable () -> Unit) {
@@ -24,9 +24,9 @@ fun Card(modifier: Modifier, content: @Composable () -> Unit) {
         modifier = modifier
             .wrapContentHeight()
             .border(
-                width = 1.dp,
+                width = .5.dp,
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(4.dp)
+                shape = RoundedCornerShape(2.dp)
             ),
         content = content
     )
@@ -36,7 +36,7 @@ fun Card(modifier: Modifier, content: @Composable () -> Unit) {
 @Preview
 @Composable
 private fun CardPreview() {
-    Card(modifier = Modifier.padding(MARGIN_LARGE)) {
+    Card(modifier = Modifier.padding(PADDING_LARGE)) {
         Row {
             InputField(
                 modifier = Modifier.weight(1f),

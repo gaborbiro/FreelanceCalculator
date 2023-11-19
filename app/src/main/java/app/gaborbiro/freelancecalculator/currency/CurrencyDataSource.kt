@@ -6,19 +6,25 @@ import io.reactivex.Flowable
 import io.reactivex.Single
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.logging.HttpLoggingInterceptor
 import org.reactivestreams.Publisher
 import java.io.InputStreamReader
 import java.util.concurrent.TimeUnit
 
 class CurrencyDataSource {
 
-    private val client: OkHttpClient by lazy { OkHttpClient() }
-
-    private val refreshCurrencies = call<ApiCurrencyListResult>("list").cache()
-
-    fun getCurrencies(): Single<List<String>> {
-        return refreshCurrencies.map { it.currencies.keys.toList() }
+    private val client: OkHttpClient by lazy {
+        val client = OkHttpClient.Builder()
+        val logger = HttpLoggingInterceptor()
+        logger.level = HttpLoggingInterceptor.Level.BODY
+        client.addInterceptor(logger)
+        client.build()
     }
+
+    private val refreshCurrencies = call<ApiCurrencyListResult>("list")
+
+    val currencies: Single<List<String>> = refreshCurrencies
+        .map { it.currencies.keys.toList() }
 
     private val refreshRate: MutableMap<Pair<String, String>, Single<ApiConversionResult>> = mutableMapOf()
 
@@ -50,6 +56,9 @@ class CurrencyDataSource {
                 emitter.onError(CurrencyConverterError(response.code, "Http ${response.code} ${response.message}"))
             }
         }
+            .doOnError {
+                println(it)
+            }
             .retryWhen(RetryWith { error, retryCount ->
                 val isTooManyRequestsError = (error as? CurrencyConverterError)?.code == 429
                 if (isTooManyRequestsError && retryCount < 3) {
@@ -61,13 +70,13 @@ class CurrencyDataSource {
     }
 
     @Keep
-    private class ApiCurrencyListResult(val currencies: Map<String, String>)
+    private data class ApiCurrencyListResult(val currencies: Map<String, String>)
 
     @Keep
-    private class ApiConversionResult(val rates: Map<String, ApiConversionRate>)
+    private data class ApiConversionResult(val rates: Map<String, ApiConversionRate>)
 
     @Keep
-    private class ApiConversionRate(val rate: Double)
+    private data class ApiConversionRate(val rate: Double)
 
     class RetryWith<T>(
         val condition: (Throwable, retryCount: Int) -> Flowable<T>,

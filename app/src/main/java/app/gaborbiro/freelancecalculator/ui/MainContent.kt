@@ -28,7 +28,7 @@ import app.gaborbiro.freelancecalculator.div
 import app.gaborbiro.freelancecalculator.format
 import app.gaborbiro.freelancecalculator.times
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
-import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
+import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
@@ -50,7 +50,7 @@ fun MainContent(
 
     val containerModifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = MARGIN_LARGE)
+        .padding(horizontal = PADDING_LARGE)
 
 
     val feePerHour: State<BigDecimal?> = store.feePerHour.collectAsState(initial = null)
@@ -121,12 +121,12 @@ private fun MainContentPreview() {
             Column(
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
-                    .padding(vertical = MARGIN_LARGE),
-                verticalArrangement = Arrangement.spacedBy(MARGIN_LARGE),
+                    .padding(vertical = PADDING_LARGE),
+                verticalArrangement = Arrangement.spacedBy(PADDING_LARGE),
             ) {
                 MainContent(
                     Store.dummyImplementation(),
-                    CurrencyRepository.getDummyImplementation()
+                    CurrencyRepository.dummyImplementation(),
                 )
             }
         }

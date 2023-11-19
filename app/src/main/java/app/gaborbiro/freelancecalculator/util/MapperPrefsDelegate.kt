@@ -12,22 +12,20 @@ import java.math.BigDecimal
 import kotlin.reflect.KProperty
 
 
-val bigDecimalMapper = object : Mapper<BigDecimal> {
-    override fun map(value: BigDecimal) = value.toString()
-
-    override fun map(value: String) = BigDecimal(value)
-}
-
-class MapperPrefsDelegate<T>(
-    private val key: Preferences.Key<String>,
+class MapperPrefsDelegate<T, S>(
+    private val key: Preferences.Key<S>,
     private val scope: CoroutineScope,
     private val prefs: DataStore<Preferences>,
-    private val mapper: Mapper<T>,
+    private val mapper: Mapper<T, S>? = null,
 ) {
 
     operator fun getValue(thisRef: Any?, property: KProperty<*>): Flow<T?> {
         return prefs.data.map {
-            it[key]?.let(mapper::map)
+            if (mapper != null) {
+                mapper.mapFromStore(it[key])
+            } else {
+                it[key] as T?
+            }
         }
     }
 
@@ -36,7 +34,11 @@ class MapperPrefsDelegate<T>(
             prefs.edit { pref ->
                 value.collectLatest {
                     it?.let {
-                        pref[key] = mapper.map(it)
+                        if (mapper != null) {
+                            pref[key] = mapper.mapToStore(it)!!
+                        } else {
+                            pref[key] = it as S
+                        }
                     } ?: run {
                         pref.remove(key)
                     }
@@ -46,7 +48,13 @@ class MapperPrefsDelegate<T>(
     }
 }
 
-interface Mapper<T> {
-    fun map(value: T): String
-    fun map(value: String): T
+val bigDecimalMapper = object : Mapper<BigDecimal, String> {
+    override fun mapToStore(value: BigDecimal?): String? = value?.let { value.toString() }
+
+    override fun mapFromStore(value: String?): BigDecimal? = value?.let { BigDecimal(it) }
+}
+
+interface Mapper<T, S> {
+    fun mapToStore(value: T?): S?
+    fun mapFromStore(value: S?): T?
 }

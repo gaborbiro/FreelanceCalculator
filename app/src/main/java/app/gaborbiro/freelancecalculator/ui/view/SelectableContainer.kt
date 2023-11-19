@@ -12,7 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
+import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 
 @Composable
 fun SelectableContainer(
@@ -44,7 +44,7 @@ fun SelectableContainer(
 @Composable
 private fun ContainerPreview() {
     SelectableContainer(
-        modifier = Modifier.padding(MARGIN_LARGE),
+        modifier = Modifier.padding(PADDING_LARGE),
         selected = true,
         onSelected = { }) { modifier ->
         InputField(

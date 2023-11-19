@@ -11,7 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
+import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 
 
 @ExperimentalLayoutApi
@@ -21,7 +21,7 @@ fun FlowCard(modifier: Modifier, content: @Composable RowScope.() -> Unit) {
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(top = MARGIN_LARGE, start = MARGIN_LARGE, end = MARGIN_LARGE)
+            .padding(top = PADDING_LARGE, start = PADDING_LARGE, end = PADDING_LARGE)
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -38,7 +38,7 @@ private fun FlowCardPreview() {
     SelectableContainer(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(MARGIN_LARGE),
+            .padding(PADDING_LARGE),
         selected = true,
         onSelected = { }
     ) { modifier ->

@@ -19,7 +19,7 @@ import app.gaborbiro.freelancecalculator.currency.CurrencyRepository
 import app.gaborbiro.freelancecalculator.currency.CurrencyRepositoryImpl
 import app.gaborbiro.freelancecalculator.ui.MainContent
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
-import app.gaborbiro.freelancecalculator.ui.theme.MARGIN_LARGE
+import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
@@ -45,8 +45,8 @@ class MainActivity : ComponentActivity() {
                     Column(
                         modifier = Modifier
                             .verticalScroll(rememberScrollState())
-                            .padding(vertical = MARGIN_LARGE),
-                        verticalArrangement = Arrangement.spacedBy(MARGIN_LARGE),
+                            .padding(vertical = PADDING_LARGE),
+                        verticalArrangement = Arrangement.spacedBy(PADDING_LARGE),
                     ) {
                         MainContent(store, currencyRepository)
                     }
