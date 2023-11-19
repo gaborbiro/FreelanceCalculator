@@ -1,4 +1,4 @@
-package app.gaborbiro.freelancecalculator.util
+package app.gaborbiro.freelancecalculator.persistence
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences

@@ -1,6 +1,7 @@
-package app.gaborbiro.freelancecalculator.currency
+package app.gaborbiro.freelancecalculator.data.currency
 
 import androidx.annotation.Keep
+import app.gaborbiro.freelancecalculator.data.currency.domain.CurrencyDataSource
 import com.google.gson.Gson
 import io.reactivex.Flowable
 import io.reactivex.Single
@@ -11,7 +12,8 @@ import org.reactivestreams.Publisher
 import java.io.InputStreamReader
 import java.util.concurrent.TimeUnit
 
-class CurrencyDataSource {
+
+class CurrencyDataSourceImpl : CurrencyDataSource {
 
     private val client: OkHttpClient by lazy {
         val client = OkHttpClient.Builder()
@@ -23,14 +25,16 @@ class CurrencyDataSource {
 
     private val refreshCurrencies = call<ApiCurrencyListResult>("list")
 
-    val currencies: Single<List<String>> = refreshCurrencies
+    override val currencies: Single<List<String>> = refreshCurrencies
         .map { it.currencies.keys.toList() }
 
-    private val refreshRate: MutableMap<Pair<String, String>, Single<ApiConversionResult>> = mutableMapOf()
+    private val refreshRate: MutableMap<Pair<String, String>, Single<ApiConversionResult>> =
+        mutableMapOf()
 
-    fun getRate(from: String, to: String): Single<Double> {
+    override fun getRate(from: String, to: String): Single<Double> {
         return (refreshRate[from to to] ?: run {
-            refreshRate[from to to] = call<ApiConversionResult>("convert?format=json&from=$from&to=$to&amount=1").cache()
+            refreshRate[from to to] =
+                call<ApiConversionResult>("convert?format=json&from=$from&to=$to&amount=1").cache()
             refreshRate[from to to]!!
         })
             .map { it.rates[to]!!.rate }
@@ -53,7 +57,12 @@ class CurrencyDataSource {
                     emitter.onError(error)
                 }
             } else {
-                emitter.onError(CurrencyConverterError(response.code, "Http ${response.code} ${response.message}"))
+                emitter.onError(
+                    CurrencyConverterError(
+                        response.code,
+                        "Http ${response.code} ${response.message}"
+                    )
+                )
             }
         }
             .doOnError {

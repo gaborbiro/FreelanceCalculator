@@ -1,9 +1,5 @@
-package app.gaborbiro.freelancecalculator
+package app.gaborbiro.freelancecalculator.persistence.domain
 
-import android.content.Context
-import app.gaborbiro.freelancecalculator.util.StoreBase
-import app.gaborbiro.freelancecalculator.util.TypedSubStore
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
@@ -49,23 +45,4 @@ interface Store {
                 TypedSubStore.dummyImplementation(sectionExpanded)
         }
     }
-}
-
-class StoreImpl(context: Context, scope: CoroutineScope) : StoreBase(context, scope), Store {
-
-    override var feePerHour: Flow<BigDecimal?> by bigDecimalDelegate("FEE_PER_HOUR")
-
-    override var hoursPerWeek: Flow<BigDecimal?> by bigDecimalDelegate("HOURS_PER_WEEK")
-
-    override var daysPerWeek: Flow<BigDecimal?> by bigDecimalDelegate("DAYS_PER_WEEK")
-
-    override var fee: Flow<BigDecimal?> by bigDecimalDelegate("FEE")
-
-    override var fromCurrency: Flow<String?> by stringDelegate("FROM_CURRENCY")
-
-    override var toCurrency: Flow<String?> by stringDelegate("TO_CURRENCY")
-
-    override var rate: Flow<BigDecimal?> by bigDecimalDelegate("RATE")
-
-    override fun sectionExpander() = booleanSubDelegate("SECTION_EXPANDED")
 }

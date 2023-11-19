@@ -1,5 +1,7 @@
-package app.gaborbiro.freelancecalculator.currency
+package app.gaborbiro.freelancecalculator.repo.currency
 
+import app.gaborbiro.freelancecalculator.data.currency.domain.CurrencyDataSource
+import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.util.Lce
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -7,21 +9,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.io.IOException
 
-interface CurrencyRepository {
-    val currencies: Observable<Lce<List<String>>>
-
-    fun getRate(from: String, to: String): Observable<Lce<Double>>
-
-    companion object {
-        fun dummyImplementation() = object : CurrencyRepository {
-            override val currencies: Observable<Lce<List<String>>> =
-                Observable.just(Lce.Data(listOf("USD", "GBP")))
-
-            override fun getRate(from: String, to: String): Observable<Lce<Double>> =
-                Observable.just(Lce.Data(1.0))
-        }
-    }
-}
 
 class CurrencyRepositoryImpl(private val dataSource: CurrencyDataSource) :
     CurrencyRepository {
@@ -35,8 +22,8 @@ class CurrencyRepositoryImpl(private val dataSource: CurrencyDataSource) :
             )
         )
 //        prepare(dataSource.currencies.map {
-//        it.sorted()
-//    }).cache()
+//            it.sorted()
+//        }).cache()
 
     override fun getRate(from: String, to: String): Observable<Lce<Double>> {
         return Observable.just(Lce.Data(1.0))

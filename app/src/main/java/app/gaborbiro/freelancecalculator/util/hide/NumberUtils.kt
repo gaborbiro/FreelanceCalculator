@@ -1,4 +1,4 @@
-package app.gaborbiro.freelancecalculator
+package app.gaborbiro.freelancecalculator.util.hide
 
 import app.gaborbiro.freelancecalculator.util.BigDecimalUtils
 import java.math.BigDecimal

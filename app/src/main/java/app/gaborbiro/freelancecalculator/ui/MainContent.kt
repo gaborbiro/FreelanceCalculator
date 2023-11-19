@@ -22,11 +22,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import app.gaborbiro.freelancecalculator.Store
-import app.gaborbiro.freelancecalculator.currency.CurrencyRepository
-import app.gaborbiro.freelancecalculator.div
-import app.gaborbiro.freelancecalculator.format
-import app.gaborbiro.freelancecalculator.times
+import app.gaborbiro.freelancecalculator.persistence.domain.Store
+import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
+import app.gaborbiro.freelancecalculator.util.hide.div
+import app.gaborbiro.freelancecalculator.util.hide.format
+import app.gaborbiro.freelancecalculator.util.hide.times
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import kotlinx.coroutines.CoroutineScope

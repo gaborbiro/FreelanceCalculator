@@ -1,4 +1,4 @@
-package app.gaborbiro.freelancecalculator.util
+package app.gaborbiro.freelancecalculator.persistence
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -6,11 +6,12 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import app.gaborbiro.freelancecalculator.persistence.domain.TypedSubStore
 import kotlinx.coroutines.CoroutineScope
 import java.math.BigDecimal
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("preferences")
 
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("preferences")
 
 abstract class StoreBase(context: Context, private val scope: CoroutineScope) {
 
