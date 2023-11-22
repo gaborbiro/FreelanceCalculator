@@ -1,6 +1,7 @@
 package app.gaborbiro.freelancecalculator.data.currency
 
 import androidx.annotation.Keep
+import app.gaborbiro.freelancecalculator.BuildConfig
 import app.gaborbiro.freelancecalculator.data.currency.domain.CurrencyDataSource
 import com.google.gson.Gson
 import io.reactivex.Flowable
@@ -45,7 +46,7 @@ class CurrencyDataSourceImpl : CurrencyDataSource {
             val request = Request.Builder()
                 .url("https://currency-converter5.p.rapidapi.com/currency/$path")
                 .get()
-                .addHeader("x-rapidapi-key", "removed by git-filter-repo, using local.properties since commit on 22/11/2023 20:33:18")
+                .addHeader("x-rapidapi-key", BuildConfig.RAPIDAPI_API_KEY)
                 .addHeader("x-rapidapi-host", "currency-converter5.p.rapidapi.com")
                 .build()
             val response = client.newCall(request).execute()
