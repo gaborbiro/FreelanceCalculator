@@ -63,7 +63,7 @@ fun InputField(
             visualTransformation = DecimalGroupingDecorator(),
             cursorBrush = SolidColor(LocalContentColor.current),
         ) {
-            TextFieldDefaults.TextFieldDecorationBox(
+            TextFieldDefaults.OutlinedTextFieldDecorationBox(
                 value = value,
                 label = { Text(text = label) },
                 enabled = true,
@@ -75,10 +75,7 @@ fun InputField(
                     start = 8.dp,
                     end = 4.dp,
                 ),
-                colors = TextFieldDefaults.textFieldColors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
+                colors = TextFieldDefaults.outlinedTextFieldColors(),
                 trailingIcon = if (clearButtonVisible) {
                     {
                         IconButton(

@@ -176,6 +176,7 @@ fun MoneyOverTimeSection(
                                 .width(140.dp)
                                 .padding(PADDING_LARGE),
                             selectedCurrency = fromCurrency,
+                            label = "From",
                             currencyRepository = currencyRepository,
                         ) {
                             store.fromCurrency = flowOf(it)
@@ -185,6 +186,7 @@ fun MoneyOverTimeSection(
                                 .width(140.dp)
                                 .padding(PADDING_LARGE),
                             selectedCurrency = toCurrency,
+                            label = "To",
                             currencyRepository = currencyRepository
                         ) {
                             store.toCurrency = flowOf(it)
@@ -205,18 +207,22 @@ fun MoneyOverTimeSection(
                     val nic4Tax = taxCalculator.calculateNIC4(perYear.toDouble())
                     val totalTax = incomeTax.totalTax + nic2Tax.totalTax + nic4Tax.totalTax
 
-                    val afterTaxPerWeek: BigDecimal = (perYear - BigDecimal(totalTax))!!.divide(
-                        WEEKS_PER_YEAR,
-                        RoundingMode.HALF_UP
-                    )
+                    if (incomeTax.breakdown.isNotEmpty() && nic4Tax.breakdown.isNotEmpty()) {
+                        val afterTaxPerWeek: BigDecimal = (perYear - BigDecimal(totalTax))!!.divide(
+                            WEEKS_PER_YEAR,
+                            RoundingMode.HALF_UP
+                        )
 
-                    TaxCalculationModel(
-                        incomeTax = "${incomeTax.totalTax.format(decimalCount = 2)} (free: ${incomeTax.breakdown[0].bracket.amount.format()})",
-                        nic2Tax = nic2Tax.totalTax.format(decimalCount = 2),
-                        nic4Tax = "${nic4Tax.totalTax.format(decimalCount = 2)} (free: ${nic4Tax.breakdown[0].bracket.amount.format()})",
-                        totalTax = totalTax.format(decimalCount = 2),
-                        afterTaxPerWeek = afterTaxPerWeek
-                    )
+                        TaxCalculationModel(
+                            incomeTax = "${incomeTax.totalTax.format(decimalCount = 2)} (free: ${incomeTax.breakdown[0].bracket.amount.format()})",
+                            nic2Tax = nic2Tax.totalTax.format(decimalCount = 2),
+                            nic4Tax = "${nic4Tax.totalTax.format(decimalCount = 2)} (free: ${nic4Tax.breakdown[0].bracket.amount.format()})",
+                            totalTax = totalTax.format(decimalCount = 2),
+                            afterTaxPerWeek = afterTaxPerWeek
+                        )
+                    } else {
+                        null
+                    }
                 }
             }
 
