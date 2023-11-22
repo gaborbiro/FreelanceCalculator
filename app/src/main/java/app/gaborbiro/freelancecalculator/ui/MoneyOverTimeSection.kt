@@ -1,26 +1,15 @@
 package app.gaborbiro.freelancecalculator.ui
 
+import England_23_24
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.KeyboardArrowLeft
-import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -36,110 +25,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
-import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_MONTH
-import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
+import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
+import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
+import app.gaborbiro.freelancecalculator.util.Lce
+import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
 import app.gaborbiro.freelancecalculator.util.hide.div
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.hide.minus
 import app.gaborbiro.freelancecalculator.util.hide.times
-import app.gaborbiro.freelancecalculator.ui.theme.PADDING_DOUBLE
-import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
-import app.gaborbiro.freelancecalculator.ui.view.FlowCard
-import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
-import app.gaborbiro.freelancecalculator.util.Lce
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.math.RoundingMode
 
-
-@OptIn(ExperimentalLayoutApi::class)
-@ExperimentalMaterial3Api
-@Composable
-fun MoneyOverTimeContent(
-    sectionId: String,
-    store: Store,
-    moneyPerWeek: BigDecimal?,
-    daysPerWeek: BigDecimal?,
-    onMoneyPerWeekChange: (value: BigDecimal?) -> Unit,
-) {
-    val sectionExpander = store.sectionExpander()
-    val expanded: Boolean? by sectionExpander[sectionId].collectAsState(initial = false)
-
-    FlowCard(modifier = Modifier.animateContentSize()) {
-        FocusPinnedInputField(
-            modifier = Modifier
-                .wrapContentSize(),
-            label = "per month",
-            value = (moneyPerWeek * WEEKS_PER_MONTH).format(decimalCount = 0),
-        ) { newValue ->
-            onMoneyPerWeekChange(newValue / WEEKS_PER_MONTH)
-        }
-        FocusPinnedInputField(
-            modifier = Modifier
-                .wrapContentSize(),
-            label = "per year",
-            value = (moneyPerWeek * WEEKS_PER_YEAR).format(decimalCount = 0),
-        ) { newValue ->
-            onMoneyPerWeekChange(newValue / WEEKS_PER_YEAR)
-        }
-
-        AnimatedVisibility(enter = fadeIn(), exit = fadeOut(), visible = expanded != false) {
-            FocusPinnedInputField(
-                modifier = Modifier
-                    .wrapContentSize(),
-                label = "per week",
-                value = moneyPerWeek.format(decimalCount = 0),
-            ) { newValue ->
-                onMoneyPerWeekChange(newValue)
-            }
-        }
-
-        AnimatedVisibility(enter = fadeIn(), exit = fadeOut(), visible = expanded != false) {
-            FocusPinnedInputField(
-                modifier = Modifier
-                    .wrapContentSize(),
-                label = "per day",
-                value = (moneyPerWeek / daysPerWeek).format(decimalCount = 2),
-            ) { newValue ->
-                onMoneyPerWeekChange(newValue * daysPerWeek)
-            }
-        }
-
-        Box(
-            Modifier
-                .align(Alignment.CenterVertically)
-                .weight(1f)
-        ) {
-            val modifier = Modifier
-                .size(48.dp)
-                .padding(PADDING_LARGE)
-                .align(Alignment.CenterEnd)
-
-            if (expanded != false) {
-                Icon(
-                    modifier = modifier
-                        .clickable {
-                            sectionExpander[sectionId] = false
-                        },
-                    imageVector = Icons.Outlined.KeyboardArrowLeft,
-                    contentDescription = "collapse",
-                )
-            } else {
-                Icon(
-                    modifier = modifier
-                        .clickable {
-                            sectionExpander[sectionId] = true
-                        },
-                    imageVector = Icons.Outlined.KeyboardArrowRight,
-                    contentDescription = "expand",
-                )
-            }
-        }
-    }
-}
 
 @ExperimentalMaterial3Api
 @ExperimentalLayoutApi
@@ -187,24 +88,11 @@ fun MoneyOverTimeSection(
 
             MoneyOverTimeContent(
                 sectionId = "BASE",
+                title = "Basic",
                 store = store,
                 moneyPerWeek = moneyPerWeek,
                 daysPerWeek = daysPerWeek.value,
                 onMoneyPerWeekChange = onMoneyPerWeekChange
-            )
-
-            FocusPinnedInputField(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(start = PADDING_LARGE),
-                label = "Fee/reduction %",
-                value = fee.value.format(decimalCount = 2),
-                clearButtonVisible = true,
-                onValueChange = { value ->
-                    CoroutineScope(Dispatchers.IO).launch {
-                        store.fee = flowOf(value)
-                    }
-                },
             )
 
             val feeMultiplier: BigDecimal? = remember(moneyPerWeek, fee.value) {
@@ -213,39 +101,26 @@ fun MoneyOverTimeSection(
 
             MoneyOverTimeContent(
                 sectionId = "FEE",
+                title = "Fee / Reduction",
                 store = store,
                 moneyPerWeek = moneyPerWeek * feeMultiplier,
                 daysPerWeek = daysPerWeek.value,
+                extraContent = {
+                    FocusPinnedInputField(
+                        modifier = Modifier
+                            .wrapContentSize(),
+                        label = "%",
+                        value = fee.value.format(decimalCount = 2),
+                        clearButtonVisible = true,
+                        onValueChange = { value ->
+                            CoroutineScope(Dispatchers.IO).launch {
+                                store.fee = flowOf(value)
+                            }
+                        },
+                    )
+                }
             ) {
                 onMoneyPerWeekChange(it / feeMultiplier)
-            }
-
-            Text(
-                modifier = Modifier
-                    .padding(top = PADDING_DOUBLE, start = PADDING_LARGE, end = PADDING_LARGE),
-                text = "Currency exchange",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
-            Row {
-                CurrencySelector(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(PADDING_LARGE),
-                    selectedCurrency = fromCurrency,
-                    currencyRepository = currencyRepository,
-                ) {
-                    store.fromCurrency = flowOf(it)
-                }
-                CurrencySelector(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(PADDING_LARGE),
-                    selectedCurrency = toCurrency,
-                    currencyRepository = currencyRepository
-                ) {
-                    store.toCurrency = flowOf(it)
-                }
             }
 
             val storeRate = remember { store.rate }
@@ -290,16 +165,77 @@ fun MoneyOverTimeSection(
 
             MoneyOverTimeContent(
                 sectionId = "CURRENCY",
+                title = "Currency conversion",
                 store = store,
                 moneyPerWeek = moneyPerWeek * currencyMultiplier,
                 daysPerWeek = daysPerWeek.value,
+                extraContent = {
+                    Row {
+                        CurrencySelector(
+                            modifier = Modifier
+                                .width(140.dp)
+                                .padding(PADDING_LARGE),
+                            selectedCurrency = fromCurrency,
+                            currencyRepository = currencyRepository,
+                        ) {
+                            store.fromCurrency = flowOf(it)
+                        }
+                        CurrencySelector(
+                            modifier = Modifier
+                                .width(140.dp)
+                                .padding(PADDING_LARGE),
+                            selectedCurrency = toCurrency,
+                            currencyRepository = currencyRepository
+                        ) {
+                            store.toCurrency = flowOf(it)
+                        }
+                    }
+                }
             ) {
                 onMoneyPerWeekChange(it / currencyMultiplier)
+            }
+
+            val taxCalculator = remember { England_23_24() }
+
+            val taxInfo = remember(moneyPerWeek, currencyMultiplier) {
+                val perYear: BigDecimal? = moneyPerWeek * currencyMultiplier * WEEKS_PER_YEAR
+                perYear?.let {
+                    val incomeTax = taxCalculator.calculateTax(it.toDouble())
+                    val nic2Tax = taxCalculator.calculateNIC2(perYear.toDouble())
+                    val nic4Tax = taxCalculator.calculateNIC4(perYear.toDouble())
+                    val totalTax = incomeTax.totalTax + nic2Tax.totalTax + nic4Tax.totalTax
+
+                    val afterTaxPerWeek: BigDecimal = (perYear - BigDecimal(totalTax))!!.divide(
+                        WEEKS_PER_YEAR,
+                        RoundingMode.HALF_UP
+                    )
+
+                    TaxCalculationModel(
+                        incomeTax = "${incomeTax.totalTax.format(decimalCount = 2)} (free: ${incomeTax.breakdown[0].bracket.amount.format()})",
+                        nic2Tax = nic2Tax.totalTax.format(decimalCount = 2),
+                        nic4Tax = "${nic4Tax.totalTax.format(decimalCount = 2)} (free: ${nic4Tax.breakdown[0].bracket.amount.format()})",
+                        totalTax = totalTax.format(decimalCount = 2),
+                        afterTaxPerWeek = afterTaxPerWeek
+                    )
+                }
+            }
+
+            taxInfo?.let {
+                TaxContent(taxInfo = taxInfo, store = store)
+
+                MoneyOverTimeContent(
+                    sectionId = "TAX",
+                    title = "Net Income",
+                    store = store,
+                    moneyPerWeek = taxInfo.afterTaxPerWeek,
+                    daysPerWeek = daysPerWeek.value,
+                ) {
+
+                }
             }
         }
     }
 }
-
 
 @ExperimentalLayoutApi
 @ExperimentalMaterial3Api

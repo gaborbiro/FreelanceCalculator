@@ -36,6 +36,24 @@ fun BigDecimal?.format(decimalCount: Int): String {
         ?: ""
 }
 
+fun Double.format(decimalCount: Int): String {
+    val format = NumberFormat.getNumberInstance(locale).also {
+        it.isGroupingUsed = true
+        it.minimumFractionDigits = 0
+        it.maximumFractionDigits = decimalCount
+    }
+    return this.let { format.format(it) }
+}
+
+fun Int.format(): String {
+    val format = NumberFormat.getNumberInstance(locale).also {
+        it.isGroupingUsed = true
+        it.minimumFractionDigits = 0
+        it.maximumFractionDigits = 0
+    }
+    return this.let { format.format(it) }
+}
+
 private val groupedFormat = NumberFormat.getNumberInstance(locale).also {
     it.isGroupingUsed = true
     it.minimumFractionDigits = 0

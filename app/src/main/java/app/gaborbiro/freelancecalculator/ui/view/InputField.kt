@@ -75,7 +75,10 @@ fun InputField(
                     start = 8.dp,
                     end = 4.dp,
                 ),
-                colors = TextFieldDefaults.textFieldColors(containerColor = Color.Transparent),
+                colors = TextFieldDefaults.textFieldColors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                ),
                 trailingIcon = if (clearButtonVisible) {
                     {
                         IconButton(

@@ -1,6 +1,8 @@
 package app.gaborbiro.freelancecalculator.ui.view
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.RowScope
@@ -11,22 +13,40 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import app.gaborbiro.freelancecalculator.ui.theme.PADDING_DOUBLE
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
+import app.gaborbiro.freelancecalculator.ui.theme.PADDING_TRIPPLE
 
 
 @ExperimentalLayoutApi
 @Composable
-fun FlowCard(modifier: Modifier, content: @Composable RowScope.() -> Unit) {
+fun FlowCard(
+    modifier: Modifier,
+    title: String? = null,
+    extraContent: (@Composable ColumnScope.() -> Unit)? = null,
+    items: @Composable RowScope.() -> Unit,
+) {
+    val topPadding =
+        if (title.isNullOrBlank().not()) PADDING_LARGE else 0.dp
     Card(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(top = PADDING_LARGE, start = PADDING_LARGE, end = PADDING_LARGE)
+            .padding(top = PADDING_LARGE, start = PADDING_LARGE, end = PADDING_LARGE),
+        title = title,
     ) {
-        FlowRow(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            content = content,
-        )
+        Column(
+            modifier = Modifier
+                .padding(top = topPadding)
+        ) {
+            extraContent?.invoke(this)
+
+            FlowRow(
+                horizontalArrangement = Arrangement.Start,
+                content = items,
+            )
+        }
     }
 }
 
