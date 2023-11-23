@@ -31,6 +31,7 @@ fun SingleInputContainer(
             modifier = modifier,
             label = label,
             value = value,
+            outlined = true,
             clearButtonVisible = clearButtonVisible,
             onValueChange = onValueChange,
         )

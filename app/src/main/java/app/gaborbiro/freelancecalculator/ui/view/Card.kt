@@ -76,6 +76,7 @@ private fun CardPreview() {
                 modifier = Modifier.weight(1f),
                 label = "Input Field Label",
                 value = "123.45",
+                outlined = true,
                 onValueChange = { },
             )
             Spacer(modifier = Modifier.width(16.dp))

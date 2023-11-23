@@ -37,9 +37,10 @@ fun InputField(
     modifier: Modifier = Modifier,
     label: String,
     value: String,
+    outlined: Boolean,
     clearButtonVisible: Boolean = false,
     onFocusChanged: ((isFocused: Boolean) -> Unit)? = null,
-    onValueChange: (value: String) -> Unit
+    onValueChange: (value: String) -> Unit,
 ) {
     val customTextSelectionColors = TextSelectionColors(
         handleColor = Color.Transparent,
@@ -63,36 +64,105 @@ fun InputField(
             visualTransformation = DecimalGroupingDecorator(),
             cursorBrush = SolidColor(LocalContentColor.current),
         ) {
-            TextFieldDefaults.OutlinedTextFieldDecorationBox(
-                value = value,
-                label = { Text(text = label) },
-                enabled = true,
-                innerTextField = it,
-                interactionSource = remember { MutableInteractionSource() },
-                singleLine = true,
-                visualTransformation = VisualTransformation.None,
-                contentPadding = TextFieldDefaults.textFieldWithLabelPadding(
-                    start = 8.dp,
-                    end = 4.dp,
-                ),
-                colors = TextFieldDefaults.outlinedTextFieldColors(),
-                trailingIcon = if (clearButtonVisible) {
-                    {
-                        IconButton(
-                            onClick = {
-                                onValueChange("")
-                            },
-                        ) {
-                            Icon(
-                                Icons.Default.Clear,
-                                contentDescription = "clear",
-                            )
-                        }
-                    }
-                } else null,
-            )
+            if (outlined) {
+                OutlineDecorationBox(
+                    value = value,
+                    label = label,
+                    innerTextField = it,
+                    clearButtonVisible = clearButtonVisible,
+                    onValueChange = onValueChange,
+                )
+            } else {
+                UnderlineDecorationBox(
+                    value = value,
+                    label = label,
+                    innerTextField = it,
+                    clearButtonVisible = clearButtonVisible,
+                    onValueChange = onValueChange,
+                )
+            }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OutlineDecorationBox(
+    value: String,
+    label: String,
+    innerTextField: @Composable () -> Unit,
+    clearButtonVisible: Boolean,
+    onValueChange: (value: String) -> Unit,
+) {
+    return TextFieldDefaults.OutlinedTextFieldDecorationBox(
+        value = value,
+        label = { Text(text = label) },
+        enabled = true,
+        innerTextField = innerTextField,
+        interactionSource = remember { MutableInteractionSource() },
+        singleLine = true,
+        visualTransformation = VisualTransformation.None,
+        contentPadding = TextFieldDefaults.textFieldWithLabelPadding(
+            start = 8.dp,
+            end = 4.dp,
+        ),
+        colors = TextFieldDefaults.outlinedTextFieldColors(),
+        trailingIcon = if (clearButtonVisible) {
+            {
+                IconButton(
+                    onClick = {
+                        onValueChange("")
+                    },
+                ) {
+                    Icon(
+                        Icons.Default.Clear,
+                        contentDescription = "clear",
+                    )
+                }
+            }
+        } else null,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun UnderlineDecorationBox(
+    value: String,
+    label: String,
+    innerTextField: @Composable () -> Unit,
+    clearButtonVisible: Boolean,
+    onValueChange: (value: String) -> Unit,
+) {
+    return TextFieldDefaults.TextFieldDecorationBox(
+        value = value,
+        label = { Text(text = label) },
+        enabled = true,
+        innerTextField = innerTextField,
+        interactionSource = remember { MutableInteractionSource() },
+        singleLine = true,
+        visualTransformation = VisualTransformation.None,
+        contentPadding = TextFieldDefaults.textFieldWithLabelPadding(
+            start = 8.dp,
+            end = 4.dp,
+        ),
+        colors = TextFieldDefaults.textFieldColors(
+            containerColor = Color.Transparent,
+        ),
+        trailingIcon = if (clearButtonVisible) {
+            {
+                IconButton(
+                    onClick = {
+                        onValueChange("")
+                    },
+                ) {
+                    Icon(
+                        Icons.Default.Clear,
+                        contentDescription = "clear",
+                    )
+                }
+            }
+        } else null,
+    )
 }
 
 @ExperimentalMaterial3Api
@@ -103,6 +173,15 @@ private fun InputFieldPreview() {
         modifier = Modifier,
         label = "Input Field Label",
         value = "123.1453",
+        outlined = true,
+        onFocusChanged = { },
+        onValueChange = { },
+    )
+    InputField(
+        modifier = Modifier,
+        label = "Input Field Label",
+        value = "123.1453",
+        outlined = false,
         onFocusChanged = { },
         onValueChange = { },
     )

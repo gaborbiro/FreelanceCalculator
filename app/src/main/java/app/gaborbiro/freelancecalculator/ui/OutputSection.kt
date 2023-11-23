@@ -78,6 +78,7 @@ fun OutputSection(
                     .align(Alignment.End),
                 label = "Days per week",
                 value = daysPerWeek.value.format(decimalCount = 0),
+                outlined = false,
                 clearButtonVisible = true,
                 onValueChange = { value ->
                     CoroutineScope(Dispatchers.IO).launch {
@@ -108,9 +109,11 @@ fun OutputSection(
                 extraContent = {
                     FocusPinnedInputField(
                         modifier = Modifier
-                            .wrapContentSize(),
+                            .wrapContentSize()
+                            .padding(bottom = PADDING_LARGE),
                         label = "%",
                         value = fee.value.format(decimalCount = 2),
+                        outlined = false,
                         clearButtonVisible = true,
                         onValueChange = { value ->
                             CoroutineScope(Dispatchers.IO).launch {
@@ -174,7 +177,11 @@ fun OutputSection(
                         CurrencySelector(
                             modifier = Modifier
                                 .width(140.dp)
-                                .padding(PADDING_LARGE),
+                                .padding(
+                                    start = PADDING_LARGE,
+                                    bottom = PADDING_LARGE,
+                                    end = PADDING_LARGE,
+                                ),
                             selectedCurrency = fromCurrency,
                             label = "From",
                             currencyRepository = currencyRepository,
@@ -184,7 +191,11 @@ fun OutputSection(
                         CurrencySelector(
                             modifier = Modifier
                                 .width(140.dp)
-                                .padding(PADDING_LARGE),
+                                .padding(
+                                    start = PADDING_LARGE,
+                                    bottom = PADDING_LARGE,
+                                    end = PADDING_LARGE,
+                                ),
                             selectedCurrency = toCurrency,
                             label = "To",
                             currencyRepository = currencyRepository

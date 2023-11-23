@@ -25,6 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,6 +40,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -133,7 +136,7 @@ fun CurrencySelector(
     }
 
     Box(Modifier.imePadding()) {
-        OutlinedTextField(
+        TextField(
             modifier = modifier
                 .wrapContentSize()
                 .onFocusChanged {
@@ -149,6 +152,9 @@ fun CurrencySelector(
                 },
             value = currentText,
             label = { Text(label) },
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = Color.Transparent,
+            ),
             onValueChange = {
                 if (currentText.text != it.text) {
                     filter = it.text.uppercase()

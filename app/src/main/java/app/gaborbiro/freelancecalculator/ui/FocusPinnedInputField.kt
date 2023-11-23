@@ -17,6 +17,7 @@ fun FocusPinnedInputField(
     modifier: Modifier,
     label: String,
     value: String,
+    outlined: Boolean,
     clearButtonVisible: Boolean = false,
     onValueChange: (value: BigDecimal?) -> Unit
 ) {
@@ -29,6 +30,7 @@ fun FocusPinnedInputField(
         modifier = modifier,
         label = label,
         value = value,
+        outlined = outlined,
         clearButtonVisible = clearButtonVisible,
         onFocusChanged = {
             isFocused = it

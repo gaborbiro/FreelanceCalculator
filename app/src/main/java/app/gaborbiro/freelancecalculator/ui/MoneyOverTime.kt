@@ -48,6 +48,7 @@ fun ColumnScope.MoneyOverTime(
                 .wrapContentSize(),
             label = "per year",
             value = (moneyPerWeek * WEEKS_PER_YEAR).format(decimalCount = 0),
+            outlined = true,
         ) { newValue ->
             onMoneyPerWeekChange(newValue / WEEKS_PER_YEAR)
         }
@@ -56,6 +57,7 @@ fun ColumnScope.MoneyOverTime(
                 .wrapContentSize(),
             label = "per month",
             value = (moneyPerWeek * WEEKS_PER_MONTH).format(decimalCount = 0),
+            outlined = true,
         ) { newValue ->
             onMoneyPerWeekChange(newValue / WEEKS_PER_MONTH)
         }
@@ -70,6 +72,7 @@ fun ColumnScope.MoneyOverTime(
                     .wrapContentSize(),
                 label = "per week",
                 value = moneyPerWeek.format(decimalCount = 0),
+                outlined = true,
             ) { newValue ->
                 onMoneyPerWeekChange(newValue)
             }
@@ -85,6 +88,7 @@ fun ColumnScope.MoneyOverTime(
                     .wrapContentSize(),
                 label = "per day",
                 value = (moneyPerWeek / daysPerWeek).format(decimalCount = 2),
+                outlined = true,
             ) { newValue ->
                 onMoneyPerWeekChange(newValue * daysPerWeek)
             }

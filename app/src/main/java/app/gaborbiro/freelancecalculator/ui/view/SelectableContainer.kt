@@ -51,6 +51,7 @@ private fun ContainerPreview() {
             modifier = modifier,
             label = "Input Field Label",
             value = "123.45",
+            outlined = true,
             onValueChange = { },
         )
     }
