@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_MEDIUM
 
 @ExperimentalMaterial3Api
@@ -49,7 +50,7 @@ fun InputField(
     CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
         BasicTextField(
             modifier = modifier
-                .padding(PADDING_MEDIUM)
+                .padding(PADDING_LARGE)
                 .onFocusChanged {
                     onFocusChanged?.invoke(it.isFocused)
                 },

@@ -20,7 +20,5 @@ class StoreImpl(context: Context, scope: CoroutineScope) : StoreBase(context, sc
 
     override var toCurrency: Flow<String?> by stringDelegate("TO_CURRENCY")
 
-    override var rate: Flow<BigDecimal?> by bigDecimalDelegate("RATE")
-
     override fun sectionExpander() = booleanSubDelegate("SECTION_EXPANDED")
 }

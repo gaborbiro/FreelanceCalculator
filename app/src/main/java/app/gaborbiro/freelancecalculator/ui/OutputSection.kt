@@ -109,8 +109,7 @@ fun OutputSection(
                 extraContent = {
                     FocusPinnedInputField(
                         modifier = Modifier
-                            .wrapContentSize()
-                            .padding(bottom = PADDING_LARGE),
+                            .wrapContentSize(),
                         label = "%",
                         value = fee.value.format(decimalCount = 2),
                         outlined = false,
@@ -126,11 +125,8 @@ fun OutputSection(
                 onMoneyPerWeekChange(it / feeMultiplier)
             }
 
-            val storeRate = remember { store.rate }
-                .collectAsState(initial = null)
-
-            var rate by rememberSaveable(storeRate.value) {
-                mutableStateOf(storeRate.value)
+            var rate: BigDecimal? by rememberSaveable {
+                mutableStateOf(null)
             }
 
             if (fromCurrency != null && toCurrency != null) {
@@ -149,7 +145,6 @@ fun OutputSection(
 
                     is Lce.Data -> {
                         rate = BigDecimal(newRate.data)
-                        store.rate = flowOf(BigDecimal(newRate.data))
                     }
 
                     is Lce.Error -> {
@@ -177,11 +172,7 @@ fun OutputSection(
                         CurrencySelector(
                             modifier = Modifier
                                 .width(140.dp)
-                                .padding(
-                                    start = PADDING_LARGE,
-                                    bottom = PADDING_LARGE,
-                                    end = PADDING_LARGE,
-                                ),
+                                .padding(PADDING_LARGE),
                             selectedCurrency = fromCurrency,
                             label = "From",
                             currencyRepository = currencyRepository,
@@ -191,11 +182,7 @@ fun OutputSection(
                         CurrencySelector(
                             modifier = Modifier
                                 .width(140.dp)
-                                .padding(
-                                    start = PADDING_LARGE,
-                                    bottom = PADDING_LARGE,
-                                    end = PADDING_LARGE,
-                                ),
+                                .padding(PADDING_LARGE),
                             selectedCurrency = toCurrency,
                             label = "To",
                             currencyRepository = currencyRepository

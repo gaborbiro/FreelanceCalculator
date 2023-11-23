@@ -27,8 +27,6 @@ fun FlowCard(
     extraContent: (@Composable ColumnScope.() -> Unit)? = null,
     items: @Composable RowScope.() -> Unit,
 ) {
-    val topPadding =
-        if (title.isNullOrBlank().not()) PADDING_LARGE else 0.dp
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -36,10 +34,7 @@ fun FlowCard(
             .padding(top = PADDING_LARGE, start = PADDING_LARGE, end = PADDING_LARGE),
         title = title,
     ) {
-        Column(
-            modifier = Modifier
-                .padding(top = topPadding)
-        ) {
+        Column {
             extraContent?.invoke(this)
 
             FlowRow(

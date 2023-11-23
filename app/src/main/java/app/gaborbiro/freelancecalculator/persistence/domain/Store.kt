@@ -19,8 +19,6 @@ interface Store {
 
     var toCurrency: Flow<String?>
 
-    var rate: Flow<BigDecimal?>
-
     fun sectionExpander(): TypedSubStore<Boolean>
 
     companion object {
@@ -31,7 +29,6 @@ interface Store {
             fee: Int = 8,
             fromCurrency: String = "USD",
             toCurrency: String = "GBP",
-            rate: Int = 1,
             sectionExpanded: Map<String, Boolean> = emptyMap(),
         ) = object : Store {
             override var feePerHour: Flow<BigDecimal?> = flowOf(BigDecimal(feePerHour))
@@ -40,7 +37,6 @@ interface Store {
             override var fee: Flow<BigDecimal?> = flowOf(BigDecimal(fee))
             override var fromCurrency: Flow<String?> = flowOf(fromCurrency)
             override var toCurrency: Flow<String?> = flowOf(toCurrency)
-            override var rate: Flow<BigDecimal?> = flowOf(BigDecimal(rate))
             override fun sectionExpander(): TypedSubStore<Boolean> =
                 TypedSubStore.dummyImplementation(sectionExpanded)
         }

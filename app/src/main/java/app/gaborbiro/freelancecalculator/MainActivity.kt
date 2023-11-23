@@ -14,11 +14,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import app.gaborbiro.freelancecalculator.persistence.domain.Store
-import app.gaborbiro.freelancecalculator.persistence.StoreImpl
 import app.gaborbiro.freelancecalculator.data.currency.CurrencyDataSourceImpl
-import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
+import app.gaborbiro.freelancecalculator.persistence.StoreImpl
+import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.repo.currency.CurrencyRepositoryImpl
+import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.MainContent
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                         StoreImpl(this@MainActivity, CoroutineScope(Dispatchers.IO))
                     }
                     val currencyRepository: CurrencyRepository = remember {
-                        CurrencyRepositoryImpl(CurrencyDataSourceImpl())
+                        CurrencyRepositoryImpl(CurrencyDataSourceImpl(applicationContext))
                     }
 
                     Column(

@@ -1,11 +1,17 @@
 package app.gaborbiro.freelancecalculator.data.currency
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import androidx.annotation.IntDef
 import androidx.annotation.Keep
+import androidx.core.content.getSystemService
 import app.gaborbiro.freelancecalculator.BuildConfig
 import app.gaborbiro.freelancecalculator.data.currency.domain.CurrencyDataSource
 import com.google.gson.Gson
 import io.reactivex.Flowable
 import io.reactivex.Single
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
@@ -14,14 +20,32 @@ import java.io.InputStreamReader
 import java.util.concurrent.TimeUnit
 
 
-class CurrencyDataSourceImpl : CurrencyDataSource {
+class CurrencyDataSourceImpl(private val appContext: Context) : CurrencyDataSource {
 
     private val client: OkHttpClient by lazy {
-        val client = OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
         val logger = HttpLoggingInterceptor()
         logger.level = HttpLoggingInterceptor.Level.BODY
-        client.addInterceptor(logger)
-        client.build()
+        builder.addInterceptor(logger)
+        val cacheSize = (5 * 1024 * 1024).toLong() // 5MB
+        builder.cache(Cache(appContext.cacheDir, cacheSize))
+        builder.addInterceptor { chain ->
+
+            val cacheControlHeader = if (getConnectionType(appContext) == NONE) {
+                "public, only-if-cached, max-stale=" + TimeUnit.DAYS.toSeconds(7)
+            } else {
+                "public, max-age=" + TimeUnit.DAYS.toSeconds(1)
+            }
+
+            val request = chain.request().newBuilder()
+                .header(
+                    name = "Cache-Control",
+                    value = cacheControlHeader
+                ).build()
+
+            chain.proceed(request)
+        }
+        builder.build()
     }
 
     private val refreshCurrencies = call<ApiCurrencyListResult>("list")
@@ -97,6 +121,29 @@ class CurrencyDataSourceImpl : CurrencyDataSource {
             return throwableFlowable.flatMap { throwable ->
                 condition(throwable, ++retryCount)
             }
+        }
+    }
+
+    companion object {
+        @IntDef(NONE, MOBILE, WIFI, VPN)
+        @Retention(AnnotationRetention.SOURCE)
+        annotation class ConnectionType
+
+        const val NONE = 0
+        const val MOBILE = 1
+        const val WIFI = 2
+        const val VPN = 3
+    }
+
+    @ConnectionType
+    fun getConnectionType(context: Context): Int {
+        val capabilities = context.getSystemService<ConnectivityManager>()
+            ?.let { it.getNetworkCapabilities(it.activeNetwork) }
+        return when {
+            capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true -> WIFI
+            capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true -> MOBILE
+            capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true -> VPN
+            else -> NONE
         }
     }
 }
