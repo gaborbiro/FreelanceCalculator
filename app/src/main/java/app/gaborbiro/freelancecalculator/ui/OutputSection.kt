@@ -1,6 +1,6 @@
 package app.gaborbiro.freelancecalculator.ui
 
-import England_23_24
+import Tax_England_23_24
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -196,7 +196,7 @@ fun OutputSection(
             }
 
             if (toCurrency == "GBP") {
-                val taxCalculator = remember { England_23_24() }
+                val taxCalculator = remember { Tax_England_23_24() }
 
                 val taxInfo = remember(moneyPerWeek, currencyMultiplier) {
                     val perYear: BigDecimal? = moneyPerWeek * currencyMultiplier * WEEKS_PER_YEAR

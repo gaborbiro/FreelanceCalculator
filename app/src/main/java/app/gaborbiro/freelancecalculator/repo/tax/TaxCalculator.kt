@@ -4,7 +4,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 
-abstract class TaxConfiguration {
+abstract class TaxCalculator {
 
     /**
      * @param brackets Pairs of bracket and the percent of tax paid within (under) that bracket.
@@ -30,18 +30,6 @@ abstract class TaxConfiguration {
         }
 
         return TaxCalculationResult(totalTax, breakdown)
-    }
-
-    fun calculateNIC2(
-        perYear: Double,
-        threshold: Double,
-        tax: Double
-    ): TaxCalculationResult {
-        return if (perYear > threshold) {
-            TaxCalculationResult(totalTax = tax, breakdown = emptyList())
-        } else {
-            TaxCalculationResult(totalTax = 0.0, breakdown = emptyList())
-        }
     }
 }
 
