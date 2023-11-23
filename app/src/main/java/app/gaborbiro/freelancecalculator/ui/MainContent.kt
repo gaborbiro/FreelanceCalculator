@@ -90,7 +90,7 @@ fun MainContent(
         },
     )
 
-    MoneyOverTimeSection(
+    OutputSection(
         containerModifier = containerModifier,
         selected = selectedIndex.value == ++indexCounter,
         moneyPerWeek = moneyPerWeek,

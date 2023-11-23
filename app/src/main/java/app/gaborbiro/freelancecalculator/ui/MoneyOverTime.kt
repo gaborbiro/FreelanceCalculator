@@ -26,7 +26,7 @@ import java.math.BigDecimal
 @OptIn(ExperimentalLayoutApi::class)
 @ExperimentalMaterial3Api
 @Composable
-fun ColumnScope.MoneyOverTimeContent(
+fun ColumnScope.MoneyOverTime(
     sectionId: String,
     title: String? = null,
     store: Store,

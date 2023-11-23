@@ -45,7 +45,7 @@ import java.math.RoundingMode
 @ExperimentalMaterial3Api
 @ExperimentalLayoutApi
 @Composable
-fun MoneyOverTimeSection(
+fun OutputSection(
     containerModifier: Modifier,
     selected: Boolean,
     moneyPerWeek: BigDecimal?,
@@ -86,7 +86,7 @@ fun MoneyOverTimeSection(
                 },
             )
 
-            MoneyOverTimeContent(
+            MoneyOverTime(
                 sectionId = "BASE",
                 title = "Basic",
                 store = store,
@@ -99,7 +99,7 @@ fun MoneyOverTimeSection(
                 BigDecimal.ONE - fee.value.div(BigDecimal(100))
             }
 
-            MoneyOverTimeContent(
+            MoneyOverTime(
                 sectionId = "FEE",
                 title = "Fee / Reduction",
                 store = store,
@@ -163,7 +163,7 @@ fun MoneyOverTimeSection(
                 (BigDecimal.ONE - fee.value.div(BigDecimal(100))) * rate
             }
 
-            MoneyOverTimeContent(
+            MoneyOverTime(
                 sectionId = "CURRENCY",
                 title = "Currency conversion",
                 store = store,
@@ -197,46 +197,49 @@ fun MoneyOverTimeSection(
                 onMoneyPerWeekChange(it / currencyMultiplier)
             }
 
-            val taxCalculator = remember { England_23_24() }
+            if (toCurrency == "GBP") {
+                val taxCalculator = remember { England_23_24() }
 
-            val taxInfo = remember(moneyPerWeek, currencyMultiplier) {
-                val perYear: BigDecimal? = moneyPerWeek * currencyMultiplier * WEEKS_PER_YEAR
-                perYear?.let {
-                    val incomeTax = taxCalculator.calculateTax(it.toDouble())
-                    val nic2Tax = taxCalculator.calculateNIC2(perYear.toDouble())
-                    val nic4Tax = taxCalculator.calculateNIC4(perYear.toDouble())
-                    val totalTax = incomeTax.totalTax + nic2Tax.totalTax + nic4Tax.totalTax
+                val taxInfo = remember(moneyPerWeek, currencyMultiplier) {
+                    val perYear: BigDecimal? = moneyPerWeek * currencyMultiplier * WEEKS_PER_YEAR
+                    perYear?.let {
+                        val incomeTax = taxCalculator.calculateTax(it.toDouble())
+                        val nic2Tax = taxCalculator.calculateNIC2(perYear.toDouble())
+                        val nic4Tax = taxCalculator.calculateNIC4(perYear.toDouble())
+                        val totalTax = incomeTax.totalTax + nic2Tax.totalTax + nic4Tax.totalTax
 
-                    if (incomeTax.breakdown.isNotEmpty() && nic4Tax.breakdown.isNotEmpty()) {
-                        val afterTaxPerWeek: BigDecimal = (perYear - BigDecimal(totalTax))!!.divide(
-                            WEEKS_PER_YEAR,
-                            RoundingMode.HALF_UP
-                        )
+                        if (incomeTax.breakdown.isNotEmpty() && nic4Tax.breakdown.isNotEmpty()) {
+                            val afterTaxPerWeek: BigDecimal =
+                                (perYear - BigDecimal(totalTax))!!.divide(
+                                    WEEKS_PER_YEAR,
+                                    RoundingMode.HALF_UP
+                                )
 
-                        TaxCalculationModel(
-                            incomeTax = "${incomeTax.totalTax.format(decimalCount = 2)} (free: ${incomeTax.breakdown[0].bracket.amount.format()})",
-                            nic2Tax = nic2Tax.totalTax.format(decimalCount = 2),
-                            nic4Tax = "${nic4Tax.totalTax.format(decimalCount = 2)} (free: ${nic4Tax.breakdown[0].bracket.amount.format()})",
-                            totalTax = totalTax.format(decimalCount = 2),
-                            afterTaxPerWeek = afterTaxPerWeek
-                        )
-                    } else {
-                        null
+                            TaxCalculationModel(
+                                incomeTax = "${incomeTax.totalTax.format(decimalCount = 2)} (free: ${incomeTax.breakdown[0].bracket.amount.format()})",
+                                nic2Tax = nic2Tax.totalTax.format(decimalCount = 2),
+                                nic4Tax = "${nic4Tax.totalTax.format(decimalCount = 2)} (free: ${nic4Tax.breakdown[0].bracket.amount.format()})",
+                                totalTax = totalTax.format(decimalCount = 2),
+                                afterTaxPerWeek = afterTaxPerWeek
+                            )
+                        } else {
+                            null
+                        }
                     }
                 }
-            }
 
-            taxInfo?.let {
-                TaxContent(taxInfo = taxInfo, store = store)
+                taxInfo?.let {
+                    TaxContent(taxInfo = taxInfo, store = store)
 
-                MoneyOverTimeContent(
-                    sectionId = "TAX",
-                    title = "Net Income",
-                    store = store,
-                    moneyPerWeek = taxInfo.afterTaxPerWeek,
-                    daysPerWeek = daysPerWeek.value,
-                ) {
+                    MoneyOverTime(
+                        sectionId = "TAX",
+                        title = "Net Income",
+                        store = store,
+                        moneyPerWeek = taxInfo.afterTaxPerWeek,
+                        daysPerWeek = daysPerWeek.value,
+                    ) {
 
+                    }
                 }
             }
         }
@@ -248,7 +251,7 @@ fun MoneyOverTimeSection(
 @Preview
 @Composable
 private fun MoneyOverTimePreview() {
-    MoneyOverTimeSection(
+    OutputSection(
         containerModifier = Modifier
             .fillMaxWidth()
             .padding(PADDING_LARGE),

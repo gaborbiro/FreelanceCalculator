@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,7 +36,7 @@ fun CollapseExpandButton(modifier: Modifier, id: String, sectionExpander: TypedS
                     .clickable {
                         sectionExpander[id] = false
                     },
-                imageVector = Icons.Outlined.KeyboardArrowLeft,
+                imageVector = Icons.Outlined.KeyboardArrowUp,
                 contentDescription = "collapse",
             )
         } else {
@@ -43,7 +45,7 @@ fun CollapseExpandButton(modifier: Modifier, id: String, sectionExpander: TypedS
                     .clickable {
                         sectionExpander[id] = true
                     },
-                imageVector = Icons.Outlined.KeyboardArrowRight,
+                imageVector = Icons.Outlined.KeyboardArrowDown,
                 contentDescription = "expand",
             )
         }
