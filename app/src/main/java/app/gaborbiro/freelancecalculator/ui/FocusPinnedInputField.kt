@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import app.gaborbiro.freelancecalculator.util.hide.strictParse
 import app.gaborbiro.freelancecalculator.ui.view.InputField
-import java.math.BigDecimal
 
 @ExperimentalMaterial3Api
 @Composable
@@ -19,7 +18,7 @@ fun FocusPinnedInputField(
     value: String,
     outlined: Boolean,
     clearButtonVisible: Boolean = false,
-    onValueChange: (value: BigDecimal?) -> Unit
+    onValueChange: (value: Double?) -> Unit
 ) {
     var isFocused by rememberSaveable { mutableStateOf(false) }
     var previousValue: String by rememberSaveable { mutableStateOf("") }

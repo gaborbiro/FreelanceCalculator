@@ -20,7 +20,7 @@ fun SingleInputContainer(
     clearButtonVisible: Boolean = false,
     selected: Boolean,
     onSelected: () -> Unit,
-    onValueChange: (value: BigDecimal?) -> Unit,
+    onValueChange: (value: Double?) -> Unit,
 ) {
     SelectableContainer(
         modifier = containerModifier,

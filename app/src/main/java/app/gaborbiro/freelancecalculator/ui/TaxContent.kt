@@ -20,14 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.TypedSubStore
-import app.gaborbiro.freelancecalculator.ui.theme.PADDING_HALF
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_MEDIUM
 import app.gaborbiro.freelancecalculator.ui.view.Card
-import java.math.BigDecimal
+import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 
 @Composable
-fun TaxContent(taxInfo: TaxCalculationModel, store: Store) {
+fun TaxContent(taxInfo: TaxCalculationUIModel, store: Store) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -116,10 +115,10 @@ private fun TaxInfoRow(title: String, value: String) {
     }
 }
 
-class TaxCalculationModel(
+class TaxCalculationUIModel(
     val incomeTax: String,
     val nic2Tax: String,
     val nic4Tax: String,
     val totalTax: String,
-    val afterTaxPerWeek: BigDecimal,
+    val afterTaxPerWeek: ArithmeticChain,
 )

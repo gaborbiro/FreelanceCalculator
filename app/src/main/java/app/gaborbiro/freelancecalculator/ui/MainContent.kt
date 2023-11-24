@@ -24,16 +24,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
-import app.gaborbiro.freelancecalculator.util.hide.div
-import app.gaborbiro.freelancecalculator.util.hide.format
-import app.gaborbiro.freelancecalculator.util.hide.times
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
+import app.gaborbiro.freelancecalculator.util.ArithmeticChain
+import app.gaborbiro.freelancecalculator.util.chainify
+import app.gaborbiro.freelancecalculator.util.div
+import app.gaborbiro.freelancecalculator.util.hide.format
+import app.gaborbiro.freelancecalculator.util.resolve
+import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
 
 
 @Composable
@@ -53,12 +55,12 @@ fun MainContent(
         .padding(horizontal = PADDING_LARGE)
 
 
-    val feePerHour: State<BigDecimal?> = store.feePerHour.collectAsState(initial = null)
+    val feePerHour: State<Double?> = store.feePerHour.collectAsState(initial = null)
 
-    val hoursPerWeek: State<BigDecimal?> = store.hoursPerWeek.collectAsState(initial = null)
+    val hoursPerWeek: State<Double?> = store.hoursPerWeek.collectAsState(initial = null)
 
-    var moneyPerWeek: BigDecimal? by rememberSaveable(feePerHour.value, hoursPerWeek.value) {
-        mutableStateOf(feePerHour.value * hoursPerWeek.value)
+    var moneyPerWeek: ArithmeticChain? by rememberSaveable(feePerHour.value, hoursPerWeek.value) {
+        mutableStateOf(feePerHour.value.chainify() * hoursPerWeek.value)
     }
 
     @Suppress("KotlinConstantConditions")
@@ -101,8 +103,8 @@ fun MainContent(
             moneyPerWeek = it
             CoroutineScope(Dispatchers.IO).launch {
                 when (selectedIndex.value) {
-                    0 -> store.feePerHour = flowOf(moneyPerWeek / hoursPerWeek.value)
-                    1 -> store.hoursPerWeek = flowOf(moneyPerWeek / feePerHour.value)
+                    0 -> store.feePerHour = flowOf((moneyPerWeek / hoursPerWeek.value).resolve())
+                    1 -> store.hoursPerWeek = flowOf((moneyPerWeek / feePerHour.value).resolve())
                 }
             }
         },

@@ -16,12 +16,13 @@ import androidx.compose.ui.Modifier
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.TypedSubStore
 import app.gaborbiro.freelancecalculator.ui.view.FlowCard
+import app.gaborbiro.freelancecalculator.util.ArithmeticChain
+import app.gaborbiro.freelancecalculator.util.chainify
+import app.gaborbiro.freelancecalculator.util.div
+import app.gaborbiro.freelancecalculator.util.times
 import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_MONTH
 import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
-import app.gaborbiro.freelancecalculator.util.hide.div
 import app.gaborbiro.freelancecalculator.util.hide.format
-import app.gaborbiro.freelancecalculator.util.hide.times
-import java.math.BigDecimal
 
 @OptIn(ExperimentalLayoutApi::class)
 @ExperimentalMaterial3Api
@@ -30,10 +31,10 @@ fun ColumnScope.MoneyOverTime(
     sectionId: String,
     title: String? = null,
     store: Store,
-    moneyPerWeek: BigDecimal?,
-    daysPerWeek: BigDecimal?,
+    moneyPerWeek: ArithmeticChain?,
+    daysPerWeek: Double?,
     extraContent: (@Composable ColumnScope.() -> Unit)? = null,
-    onMoneyPerWeekChange: (value: BigDecimal?) -> Unit,
+    onMoneyPerWeekChange: (newValue: ArithmeticChain?) -> Unit,
 ) {
     val sectionExpander: TypedSubStore<Boolean> = store.sectionExpander()
     val expanded: Boolean? by sectionExpander[sectionId].collectAsState(initial = false)
@@ -47,7 +48,7 @@ fun ColumnScope.MoneyOverTime(
             modifier = Modifier
                 .wrapContentSize(),
             label = "per year",
-            value = (moneyPerWeek * WEEKS_PER_YEAR).format(decimalCount = 0),
+            value = (moneyPerWeek * WEEKS_PER_YEAR)?.resolve().format(decimalCount = 0),
             outlined = true,
         ) { newValue ->
             onMoneyPerWeekChange(newValue / WEEKS_PER_YEAR)
@@ -56,7 +57,7 @@ fun ColumnScope.MoneyOverTime(
             modifier = Modifier
                 .wrapContentSize(),
             label = "per month",
-            value = (moneyPerWeek * WEEKS_PER_MONTH).format(decimalCount = 0),
+            value = (moneyPerWeek * WEEKS_PER_MONTH)?.resolve().format(decimalCount = 0),
             outlined = true,
         ) { newValue ->
             onMoneyPerWeekChange(newValue / WEEKS_PER_MONTH)
@@ -71,10 +72,10 @@ fun ColumnScope.MoneyOverTime(
                 modifier = Modifier
                     .wrapContentSize(),
                 label = "per week",
-                value = moneyPerWeek.format(decimalCount = 0),
+                value = moneyPerWeek?.resolve().format(decimalCount = 0),
                 outlined = true,
             ) { newValue ->
-                onMoneyPerWeekChange(newValue)
+                onMoneyPerWeekChange(newValue.chainify())
             }
         }
 
@@ -87,10 +88,10 @@ fun ColumnScope.MoneyOverTime(
                 modifier = Modifier
                     .wrapContentSize(),
                 label = "per day",
-                value = (moneyPerWeek / daysPerWeek).format(decimalCount = 2),
+                value = (moneyPerWeek / daysPerWeek)?.resolve().format(decimalCount = 2),
                 outlined = true,
             ) { newValue ->
-                onMoneyPerWeekChange(newValue * daysPerWeek)
+                onMoneyPerWeekChange(newValue.chainify() * daysPerWeek)
             }
         }
 

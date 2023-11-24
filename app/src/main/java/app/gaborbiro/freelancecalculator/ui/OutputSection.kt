@@ -28,18 +28,17 @@ import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
+import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.Lce
+import app.gaborbiro.freelancecalculator.util.chainify
+import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
-import app.gaborbiro.freelancecalculator.util.hide.div
 import app.gaborbiro.freelancecalculator.util.hide.format
-import app.gaborbiro.freelancecalculator.util.hide.minus
-import app.gaborbiro.freelancecalculator.util.hide.times
+import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import java.math.RoundingMode
 
 
 @ExperimentalMaterial3Api
@@ -48,11 +47,11 @@ import java.math.RoundingMode
 fun OutputSection(
     containerModifier: Modifier,
     selected: Boolean,
-    moneyPerWeek: BigDecimal?,
+    moneyPerWeek: ArithmeticChain?,
     store: Store,
     currencyRepository: CurrencyRepository,
     onSelected: () -> Unit,
-    onMoneyPerWeekChange: (value: BigDecimal?) -> Unit,
+    onMoneyPerWeekChange: (value: ArithmeticChain?) -> Unit,
 ) {
     SelectableContainer(
         modifier = containerModifier,
@@ -63,9 +62,9 @@ fun OutputSection(
             modifier = modifier
                 .padding(bottom = PADDING_LARGE)
         ) {
-            val daysPerWeek: State<BigDecimal?> = store.daysPerWeek
+            val daysPerWeek: State<Double?> = store.daysPerWeek
                 .collectAsState(initial = null)
-            val fee: State<BigDecimal?> = store.fee
+            val fee: State<Double?> = store.fee
                 .collectAsState(initial = null)
             val fromCurrency by store.fromCurrency
                 .collectAsState(initial = null)
@@ -96,8 +95,8 @@ fun OutputSection(
                 onMoneyPerWeekChange = onMoneyPerWeekChange
             )
 
-            val feeMultiplier: BigDecimal? = remember(moneyPerWeek, fee.value) {
-                BigDecimal.ONE - fee.value.div(BigDecimal(100))
+            val feeMultiplier: Double? = remember(moneyPerWeek, fee.value) {
+                fee.value?.let { 1.0 - (it / 100.0) }
             }
 
             MoneyOverTime(
@@ -121,11 +120,11 @@ fun OutputSection(
                         },
                     )
                 }
-            ) {
-                onMoneyPerWeekChange(it / feeMultiplier)
+            ) { newValue: ArithmeticChain? ->
+                onMoneyPerWeekChange(newValue / feeMultiplier)
             }
 
-            var rate: BigDecimal? by rememberSaveable {
+            var rate: Double? by rememberSaveable {
                 mutableStateOf(null)
             }
 
@@ -144,7 +143,7 @@ fun OutputSection(
                     }
 
                     is Lce.Data -> {
-                        rate = BigDecimal(newRate.data)
+                        rate = newRate.data
                     }
 
                     is Lce.Error -> {
@@ -157,8 +156,8 @@ fun OutputSection(
                 }
             }
 
-            val currencyMultiplier: BigDecimal? = remember(moneyPerWeek, fee.value, rate) {
-                (BigDecimal.ONE - fee.value.div(BigDecimal(100))) * rate
+            val currencyMultiplier: ArithmeticChain? = remember(moneyPerWeek, feeMultiplier, rate) {
+                feeMultiplier.chainify() * rate
             }
 
             MoneyOverTime(
@@ -191,34 +190,31 @@ fun OutputSection(
                         }
                     }
                 }
-            ) {
-                onMoneyPerWeekChange(it / currencyMultiplier)
+            ) { newValue: ArithmeticChain? ->
+                onMoneyPerWeekChange(newValue / currencyMultiplier)
             }
 
             if (toCurrency == "GBP") {
                 val taxCalculator = remember { Tax_England_23_24() }
 
                 val taxInfo = remember(moneyPerWeek, currencyMultiplier) {
-                    val perYear: BigDecimal? = moneyPerWeek * currencyMultiplier * WEEKS_PER_YEAR
+                    val perYear: Double? =
+                        (moneyPerWeek * currencyMultiplier * WEEKS_PER_YEAR)?.resolve()
                     perYear?.let {
-                        val incomeTax = taxCalculator.calculateTax(it.toDouble())
-                        val nic2Tax = taxCalculator.calculateNIC2(perYear.toDouble())
-                        val nic4Tax = taxCalculator.calculateNIC4(perYear.toDouble())
+                        val incomeTax = taxCalculator.calculateTax(it)
+                        val nic2Tax = taxCalculator.calculateNIC2(it)
+                        val nic4Tax = taxCalculator.calculateNIC4(it)
                         val totalTax = incomeTax.totalTax + nic2Tax.totalTax + nic4Tax.totalTax
 
                         if (incomeTax.breakdown.isNotEmpty() && nic4Tax.breakdown.isNotEmpty()) {
-                            val afterTaxPerWeek: BigDecimal =
-                                (perYear - BigDecimal(totalTax))!!.divide(
-                                    WEEKS_PER_YEAR,
-                                    RoundingMode.HALF_UP
-                                )
+                            val afterTaxPerWeek: ArithmeticChain? = (it - totalTax) / WEEKS_PER_YEAR
 
-                            TaxCalculationModel(
-                                incomeTax = "${incomeTax.totalTax.format(decimalCount = 2)} (free: ${incomeTax.breakdown[0].bracket.amount.format()})",
+                            TaxCalculationUIModel(
+                                incomeTax = "${incomeTax.totalTax.format(decimalCount = 2)} (allowance: ${incomeTax.breakdown[0].bracket.amount.format()})",
                                 nic2Tax = nic2Tax.totalTax.format(decimalCount = 2),
-                                nic4Tax = "${nic4Tax.totalTax.format(decimalCount = 2)} (free: ${nic4Tax.breakdown[0].bracket.amount.format()})",
+                                nic4Tax = "${nic4Tax.totalTax.format(decimalCount = 2)} (allowance: ${nic4Tax.breakdown[0].bracket.amount.format()})",
                                 totalTax = totalTax.format(decimalCount = 2),
-                                afterTaxPerWeek = afterTaxPerWeek
+                                afterTaxPerWeek = afterTaxPerWeek!!
                             )
                         } else {
                             null
@@ -235,7 +231,7 @@ fun OutputSection(
                         store = store,
                         moneyPerWeek = taxInfo.afterTaxPerWeek,
                         daysPerWeek = daysPerWeek.value,
-                    ) {
+                    ) { newValue: ArithmeticChain? ->
 
                     }
                 }
@@ -253,7 +249,7 @@ private fun MoneyOverTimePreview() {
         containerModifier = Modifier
             .fillMaxWidth()
             .padding(PADDING_LARGE),
-        moneyPerWeek = BigDecimal.valueOf(355.0),
+        moneyPerWeek = 355.0.chainify(),
         onMoneyPerWeekChange = { },
         store = Store.dummyImplementation(),
         currencyRepository = CurrencyRepository.dummyImplementation(),

@@ -4,11 +4,11 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.gaborbiro.freelancecalculator.persistence.domain.TypedSubStore
 import kotlinx.coroutines.CoroutineScope
-import java.math.BigDecimal
 
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("preferences")
@@ -17,16 +17,15 @@ abstract class StoreBase(context: Context, private val scope: CoroutineScope) {
 
     private val prefs: DataStore<Preferences> = context.dataStore
 
-    protected fun bigDecimalDelegate(key: String): MapperPrefsDelegate<BigDecimal, String> {
+    protected fun doubleDelegate(key: String): MapperPrefsDelegate<Double> {
         return MapperPrefsDelegate(
-            key = stringPreferencesKey(key),
+            key = doublePreferencesKey(key),
             scope = scope,
             prefs = prefs,
-            mapper = bigDecimalMapper
         )
     }
 
-    protected fun stringDelegate(key: String): MapperPrefsDelegate<String, String> {
+    protected fun stringDelegate(key: String): MapperPrefsDelegate<String> {
         return MapperPrefsDelegate(
             key = stringPreferencesKey(key),
             scope = scope,
