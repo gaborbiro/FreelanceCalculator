@@ -36,8 +36,10 @@ fun FlowCard(
     ) {
         Column {
             extraContent?.invoke(this)
-
+            val topPadding = if (title.isNullOrBlank()) 0.dp else PADDING_LARGE
             FlowRow(
+                modifier = Modifier
+                    .padding(top = topPadding),
                 horizontalArrangement = Arrangement.Start,
                 content = items,
             )
@@ -57,7 +59,7 @@ private fun FlowCardPreview() {
         selected = true,
         onSelected = { }
     ) { modifier ->
-        FlowCard(modifier = modifier) {
+        FlowCard(modifier = modifier, title = "Title") {
             InputField(
                 modifier = Modifier,
                 label = "Input Field",
