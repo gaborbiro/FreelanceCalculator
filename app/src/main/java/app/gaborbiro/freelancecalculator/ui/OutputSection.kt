@@ -26,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
+import app.gaborbiro.freelancecalculator.repo.tax.TaxCalculator
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
@@ -156,15 +157,16 @@ fun OutputSection(
                 }
             }
 
-            val currencyMultiplier: ArithmeticChain? = remember(moneyPerWeek, feeMultiplier, rate) {
-                feeMultiplier.chainify() * rate
-            }
+            val feeAndCurrencyMultiplier: ArithmeticChain? =
+                remember(moneyPerWeek, feeMultiplier, rate) {
+                    feeMultiplier.chainify() * rate
+                }
 
             MoneyOverTime(
                 sectionId = "CURRENCY",
                 title = "Currency conversion",
                 store = store,
-                moneyPerWeek = moneyPerWeek * currencyMultiplier,
+                moneyPerWeek = moneyPerWeek * feeAndCurrencyMultiplier,
                 daysPerWeek = daysPerWeek.value,
                 extraContent = {
                     Row {
@@ -191,15 +193,15 @@ fun OutputSection(
                     }
                 }
             ) { newValue: ArithmeticChain? ->
-                onMoneyPerWeekChange(newValue / currencyMultiplier)
+                onMoneyPerWeekChange(newValue / feeAndCurrencyMultiplier)
             }
 
             if (toCurrency == "GBP") {
-                val taxCalculator = remember { Tax_England_23_24() }
+                val taxCalculator: TaxCalculator = remember { Tax_England_23_24() }
 
-                val taxInfo = remember(moneyPerWeek, currencyMultiplier) {
+                val taxInfo = remember(moneyPerWeek, feeAndCurrencyMultiplier) {
                     val perYear: Double? =
-                        (moneyPerWeek * currencyMultiplier * WEEKS_PER_YEAR)?.resolve()
+                        (moneyPerWeek * feeAndCurrencyMultiplier * WEEKS_PER_YEAR)?.resolve()
                     perYear?.let {
                         val incomeTax = taxCalculator.calculateTax(it)
                         val nic2Tax = taxCalculator.calculateNIC2(it)
@@ -224,16 +226,20 @@ fun OutputSection(
 
                 taxInfo?.let {
                     TaxContent(taxInfo = taxInfo, store = store)
-
-                    MoneyOverTime(
-                        sectionId = "TAX",
-                        title = "Net Income",
-                        store = store,
-                        moneyPerWeek = taxInfo.afterTaxPerWeek,
-                        daysPerWeek = daysPerWeek.value,
-                    ) { newValue: ArithmeticChain? ->
-
-                    }
+                }
+                MoneyOverTime(
+                    sectionId = "TAX",
+                    title = "Net Income",
+                    store = store,
+                    moneyPerWeek = taxInfo?.afterTaxPerWeek,
+                    daysPerWeek = daysPerWeek.value,
+                ) { newValue: ArithmeticChain? ->
+                    val perYear = newValue * WEEKS_PER_YEAR
+                    onMoneyPerWeekChange(
+                        perYear?.resolve()?.let {
+                            taxCalculator.calculateIncomeFromBrut(it)
+                        } / feeAndCurrencyMultiplier / WEEKS_PER_YEAR
+                    )
                 }
             }
         }

@@ -11,15 +11,20 @@ import kotlinx.coroutines.launch
 import kotlin.reflect.KProperty
 
 
-class MapperPrefsDelegate<T>(
-    private val key: Preferences.Key<T>,
+class PrefsDelegate<T, S>(
+    private val key: Preferences.Key<S>,
     private val scope: CoroutineScope,
     private val prefs: DataStore<Preferences>,
+    private val mapper: Mapper<T, S>? = null,
 ) {
 
     operator fun getValue(thisRef: Any?, property: KProperty<*>): Flow<T?> {
         return prefs.data.map {
-            it[key]
+            if (mapper != null) {
+                mapper.fromType(it[key])
+            } else {
+                it[key] as T?
+            }
         }
     }
 
@@ -27,13 +32,22 @@ class MapperPrefsDelegate<T>(
         scope.launch {
             prefs.edit { pref ->
                 value.collectLatest {
-                    it?.let {
-                        pref[key] = it
-                    } ?: run {
+                    if (it != null) {
+                        if (mapper != null) {
+                            pref[key] = mapper.toType(it)!!
+                        } else {
+                            pref[key] = it as S
+                        }
+                    } else {
                         pref.remove(key)
                     }
                 }
             }
         }
     }
+}
+
+interface Mapper<T, S> {
+    fun toType(value: T?): S?
+    fun fromType(value: S?): T?
 }

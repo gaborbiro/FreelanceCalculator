@@ -6,12 +6,20 @@ import kotlin.math.roundToInt
 
 abstract class TaxCalculator {
 
+    abstract fun calculateTax(perYear: Double): TaxCalculationResult
+
+    abstract fun calculateNIC2(perYear: Double): TaxCalculationResult
+
+    abstract fun calculateNIC4(perYear: Double): TaxCalculationResult
+
+    abstract fun calculateIncomeFromBrut(brut: Double): Double
+
     /**
      * @param brackets Pairs of bracket and the percent of tax paid within (under) that bracket.
      * Brackets are not cumulative. So a 12,500 pers. all. with 37,500/150,000 brackets would be
      * [12,500 -> 0.0, 37,500->0.2, 112,500 -> 0.4, Double.MAX_VALUE -> 0.45]
      */
-    fun calculateIncomeTax(
+    fun calculateTax(
         perYear: Double,
         brackets: List<Bracket>
     ): TaxCalculationResult {

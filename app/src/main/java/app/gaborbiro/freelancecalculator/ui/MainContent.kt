@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -43,11 +44,11 @@ fun MainContent(
     store: Store,
     currencyRepository: CurrencyRepository,
 ) {
-    val selectedIndex = rememberSaveable { mutableStateOf(2) }
+    val selectedIndex: State<Int?> = store.selectedIndex.collectAsState(initial = null)
     var indexCounter = -1
 
     fun selectionUpdater(indexCounter: Int): () -> Unit = {
-        selectedIndex.value = indexCounter
+        store.selectedIndex = flowOf(indexCounter)
     }
 
     val containerModifier = Modifier
@@ -55,25 +56,25 @@ fun MainContent(
         .padding(horizontal = PADDING_LARGE)
 
 
-    val feePerHour: State<Double?> = store.feePerHour.collectAsState(initial = null)
+    val feePerHour: State<ArithmeticChain?> = store.feePerHour.collectAsState(initial = null)
 
-    val hoursPerWeek: State<Double?> = store.hoursPerWeek.collectAsState(initial = null)
+    val hoursPerWeek: State<ArithmeticChain?> = store.hoursPerWeek.collectAsState(initial = null)
 
     var moneyPerWeek: ArithmeticChain? by rememberSaveable(feePerHour.value, hoursPerWeek.value) {
-        mutableStateOf(feePerHour.value.chainify() * hoursPerWeek.value)
+        mutableStateOf(feePerHour.value * hoursPerWeek.value)
     }
 
     @Suppress("KotlinConstantConditions")
     SingleInputContainer(
         containerModifier = containerModifier,
         label = "Fee per hour",
-        value = feePerHour.value.format(decimalCount = 2),
+        value = feePerHour.value.resolve().format(decimalCount = 2),
         clearButtonVisible = true,
         selected = selectedIndex.value == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
-        onValueChange = { value ->
+        onValueChange = { newValue: Double? ->
             CoroutineScope(Dispatchers.IO).launch {
-                store.feePerHour = flowOf(value)
+                store.feePerHour = flowOf(newValue.chainify())
             }
         },
     )
@@ -81,13 +82,13 @@ fun MainContent(
     SingleInputContainer(
         containerModifier = containerModifier,
         label = "Hours per week",
-        value = hoursPerWeek.value.format(decimalCount = 0),
+        value = hoursPerWeek.value.resolve().format(decimalCount = 0),
         clearButtonVisible = true,
         selected = selectedIndex.value == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
-        onValueChange = { value ->
+        onValueChange = { newValue: Double? ->
             CoroutineScope(Dispatchers.IO).launch {
-                store.hoursPerWeek = flowOf(value)
+                store.hoursPerWeek = flowOf(newValue.chainify())
             }
         },
     )
@@ -99,12 +100,12 @@ fun MainContent(
         store = store,
         currencyRepository = currencyRepository,
         onSelected = selectionUpdater(indexCounter),
-        onMoneyPerWeekChange = {
-            moneyPerWeek = it
+        onMoneyPerWeekChange = { newValue: ArithmeticChain? ->
+            moneyPerWeek = newValue
             CoroutineScope(Dispatchers.IO).launch {
                 when (selectedIndex.value) {
-                    0 -> store.feePerHour = flowOf((moneyPerWeek / hoursPerWeek.value).resolve())
-                    1 -> store.hoursPerWeek = flowOf((moneyPerWeek / feePerHour.value).resolve())
+                    0 -> store.feePerHour = flowOf(moneyPerWeek / hoursPerWeek.value)
+                    1 -> store.hoursPerWeek = flowOf(moneyPerWeek / feePerHour.value)
                 }
             }
         },

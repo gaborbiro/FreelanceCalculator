@@ -1,15 +1,18 @@
 package app.gaborbiro.freelancecalculator.persistence.domain
 
+import app.gaborbiro.freelancecalculator.util.ArithmeticChain
+import app.gaborbiro.freelancecalculator.util.chainify
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import java.math.BigDecimal
 
 
 interface Store {
 
-    var feePerHour: Flow<Double?>
+    var selectedIndex: Flow<Int?>
 
-    var hoursPerWeek: Flow<Double?>
+    var feePerHour: Flow<ArithmeticChain?>
+
+    var hoursPerWeek: Flow<ArithmeticChain?>
 
     var daysPerWeek: Flow<Double?>
 
@@ -23,6 +26,7 @@ interface Store {
 
     companion object {
         fun dummyImplementation(
+            selectedIndex: Int = 2,
             feePerHour: Double = 80.0,
             hoursPerWeek: Double = 30.0,
             daysPerWeek: Double = 5.0,
@@ -31,8 +35,9 @@ interface Store {
             toCurrency: String = "GBP",
             sectionExpanded: Map<String, Boolean> = emptyMap(),
         ) = object : Store {
-            override var feePerHour: Flow<Double?> = flowOf(feePerHour)
-            override var hoursPerWeek: Flow<Double?> = flowOf(hoursPerWeek)
+            override var selectedIndex: Flow<Int?> = flowOf(selectedIndex)
+            override var feePerHour: Flow<ArithmeticChain?> = flowOf(feePerHour.chainify())
+            override var hoursPerWeek: Flow<ArithmeticChain?> = flowOf(hoursPerWeek.chainify())
             override var daysPerWeek: Flow<Double?> = flowOf(daysPerWeek)
             override var fee: Flow<Double?> = flowOf(fee)
             override var fromCurrency: Flow<String?> = flowOf(fromCurrency)
