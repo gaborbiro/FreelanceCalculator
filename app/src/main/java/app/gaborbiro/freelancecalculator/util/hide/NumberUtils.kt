@@ -2,6 +2,7 @@ package app.gaborbiro.freelancecalculator.util.hide
 
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.div
+import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.text.ParsePosition
@@ -19,10 +20,21 @@ private val parsingFormat = (NumberFormat.getNumberInstance(locale) as DecimalFo
     it.isParseBigDecimal = false
 }
 
+fun BigDecimal?.format(decimalCount: Int): String {
+    val format = NumberFormat.getNumberInstance(locale).also {
+        it.isGroupingUsed = true
+        it.minimumFractionDigits = decimalCount
+        it.maximumFractionDigits = decimalCount
+    }
+    return this
+        ?.let { format.format(it) }
+        ?: ""
+}
+
 fun Double?.format(decimalCount: Int): String {
     val format = NumberFormat.getNumberInstance(locale).also {
         it.isGroupingUsed = true
-        it.minimumFractionDigits = 0
+        it.minimumFractionDigits = decimalCount
         it.maximumFractionDigits = decimalCount
     }
     return this

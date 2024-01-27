@@ -3,6 +3,7 @@ package app.gaborbiro.freelancecalculator.ui
 import Tax_England_23_24
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,8 +43,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 
-@ExperimentalMaterial3Api
-@ExperimentalLayoutApi
 @Composable
 fun OutputSection(
     containerModifier: Modifier,
@@ -65,184 +64,263 @@ fun OutputSection(
         ) {
             val daysPerWeek: State<Double?> = store.daysPerWeek
                 .collectAsState(initial = null)
+
+            DaysPerWeekSection(store)
+
+            BasicSection(store, moneyPerWeek, daysPerWeek.value, onMoneyPerWeekChange)
+
+            FeeSection(store, moneyPerWeek, daysPerWeek.value, onMoneyPerWeekChange)
+
+            var exchangeRate: Double? by rememberSaveable {
+                mutableStateOf(null)
+            }
             val fee: State<Double?> = store.fee
                 .collectAsState(initial = null)
-            val fromCurrency by store.fromCurrency
-                .collectAsState(initial = null)
+            val feeAndExchangeRateMultiplier: ArithmeticChain? =
+                remember(fee.value, exchangeRate) {
+                    fee.value?.let { 1.0 - (it / 100.0) }.chainify() * exchangeRate
+                }
+
+            CurrencySection(
+                store = store,
+                currencyRepository = currencyRepository,
+                moneyPerWeek = moneyPerWeek * feeAndExchangeRateMultiplier,
+                daysPerWeek = daysPerWeek.value,
+                onExchangeRateChanged = {
+                    exchangeRate = it
+                },
+            ) {
+                onMoneyPerWeekChange(it / feeAndExchangeRateMultiplier)
+            }
+
             val toCurrency by store.toCurrency
                 .collectAsState(initial = null)
 
+            if (toCurrency == "GBP") {
+                TaxSection(
+                    store,
+                    moneyPerWeek,
+                    daysPerWeek.value,
+                    feeAndExchangeRateMultiplier,
+                    onMoneyPerWeekChange,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ColumnScope.BasicSection(
+    store: Store,
+    moneyPerWeek: ArithmeticChain?,
+    daysPerWeek: Double?,
+    onMoneyPerWeekChange: (value: ArithmeticChain?) -> Unit,
+) {
+    MoneyOverTime(
+        sectionId = "BASE",
+        title = "Basic",
+        store = store,
+        moneyPerWeek = moneyPerWeek,
+        daysPerWeek = daysPerWeek,
+        onMoneyPerWeekChange = onMoneyPerWeekChange
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ColumnScope.FeeSection(
+    store: Store,
+    moneyPerWeek: ArithmeticChain?,
+    daysPerWeek: Double?,
+    onMoneyPerWeekChange: (value: ArithmeticChain?) -> Unit,
+) {
+    val fee: State<Double?> = store.fee
+        .collectAsState(initial = null)
+    val feeMultiplier: Double? = remember(moneyPerWeek, fee.value) {
+        fee.value?.let { 1.0 - (it / 100.0) }
+    }
+
+    MoneyOverTime(
+        sectionId = "FEE",
+        title = "Fee / Reduction",
+        store = store,
+        moneyPerWeek = moneyPerWeek * feeMultiplier,
+        daysPerWeek = daysPerWeek,
+        extraContent = {
             FocusPinnedInputField(
                 modifier = Modifier
-                    .wrapContentSize()
-                    .align(Alignment.End),
-                label = "Days per week",
-                value = daysPerWeek.value.format(decimalCount = 0),
+                    .wrapContentSize(),
+                label = "%",
+                value = fee.value.format(decimalCount = 2),
                 outlined = false,
                 clearButtonVisible = true,
                 onValueChange = { value ->
                     CoroutineScope(Dispatchers.IO).launch {
-                        store.daysPerWeek = flowOf(value)
+                        store.fee = flowOf(value)
                     }
                 },
             )
+        }
+    ) { newValue: ArithmeticChain? ->
+        onMoneyPerWeekChange(newValue / feeMultiplier)
+    }
+}
 
-            MoneyOverTime(
-                sectionId = "BASE",
-                title = "Basic",
-                store = store,
-                moneyPerWeek = moneyPerWeek,
-                daysPerWeek = daysPerWeek.value,
-                onMoneyPerWeekChange = onMoneyPerWeekChange
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ColumnScope.DaysPerWeekSection(store: Store) {
+    val daysPerWeek: State<Double?> = store.daysPerWeek
+        .collectAsState(initial = null)
+
+    FocusPinnedInputField(
+        modifier = Modifier
+            .wrapContentSize()
+            .align(Alignment.End),
+        label = "Days per week",
+        value = daysPerWeek.value.format(decimalCount = 0),
+        outlined = false,
+        clearButtonVisible = true,
+        onValueChange = { value ->
+            CoroutineScope(Dispatchers.IO).launch {
+                store.daysPerWeek = flowOf(value)
+            }
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ColumnScope.CurrencySection(
+    store: Store,
+    currencyRepository: CurrencyRepository,
+    moneyPerWeek: ArithmeticChain?,
+    daysPerWeek: Double?,
+    onExchangeRateChanged: (rate: Double) -> Unit,
+    onMoneyPerWeekChange: (value: ArithmeticChain?) -> Unit,
+) {
+    val fromCurrency by store.fromCurrency
+        .collectAsState(initial = null)
+    val toCurrency by store.toCurrency
+        .collectAsState(initial = null)
+
+    if (fromCurrency != null && toCurrency != null) {
+        val newRate = remember(fromCurrency, toCurrency) {
+            currencyRepository.getRate(
+                fromCurrency!!,
+                toCurrency!!
             )
+        }
+            .subscribeAsState(Lce.Loading).value
 
-            val feeMultiplier: Double? = remember(moneyPerWeek, fee.value) {
-                fee.value?.let { 1.0 - (it / 100.0) }
+        when (newRate) {
+            is Lce.Loading -> {
+
             }
 
-            MoneyOverTime(
-                sectionId = "FEE",
-                title = "Fee / Reduction",
-                store = store,
-                moneyPerWeek = moneyPerWeek * feeMultiplier,
-                daysPerWeek = daysPerWeek.value,
-                extraContent = {
-                    FocusPinnedInputField(
-                        modifier = Modifier
-                            .wrapContentSize(),
-                        label = "%",
-                        value = fee.value.format(decimalCount = 2),
-                        outlined = false,
-                        clearButtonVisible = true,
-                        onValueChange = { value ->
-                            CoroutineScope(Dispatchers.IO).launch {
-                                store.fee = flowOf(value)
-                            }
-                        },
-                    )
-                }
-            ) { newValue: ArithmeticChain? ->
-                onMoneyPerWeekChange(newValue / feeMultiplier)
+            is Lce.Data -> {
+                onExchangeRateChanged(newRate.data)
             }
 
-            var rate: Double? by rememberSaveable {
-                mutableStateOf(null)
+            is Lce.Error -> {
+                Toast.makeText(
+                    LocalContext.current,
+                    newRate.throwable.message,
+                    Toast.LENGTH_SHORT
+                ).show()
             }
+        }
+    }
 
-            if (fromCurrency != null && toCurrency != null) {
-                val newRate = remember(fromCurrency, toCurrency) {
-                    currencyRepository.getRate(
-                        fromCurrency!!,
-                        toCurrency!!
-                    )
+    MoneyOverTime(
+        sectionId = "CURRENCY",
+        title = "Currency conversion",
+        store = store,
+        moneyPerWeek = moneyPerWeek,
+        daysPerWeek = daysPerWeek,
+        extraContent = {
+            Row {
+                CurrencySelector(
+                    modifier = Modifier
+                        .width(140.dp)
+                        .padding(PADDING_LARGE),
+                    selectedCurrency = fromCurrency,
+                    label = "From",
+                    currencyRepository = currencyRepository,
+                ) {
+                    store.fromCurrency = flowOf(it)
                 }
-                    .subscribeAsState(Lce.Loading).value
-
-                when (newRate) {
-                    is Lce.Loading -> {
-
-                    }
-
-                    is Lce.Data -> {
-                        rate = newRate.data
-                    }
-
-                    is Lce.Error -> {
-                        Toast.makeText(
-                            LocalContext.current,
-                            newRate.throwable.message,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-
-            val feeAndCurrencyMultiplier: ArithmeticChain? =
-                remember(moneyPerWeek, feeMultiplier, rate) {
-                    feeMultiplier.chainify() * rate
-                }
-
-            MoneyOverTime(
-                sectionId = "CURRENCY",
-                title = "Currency conversion",
-                store = store,
-                moneyPerWeek = moneyPerWeek * feeAndCurrencyMultiplier,
-                daysPerWeek = daysPerWeek.value,
-                extraContent = {
-                    Row {
-                        CurrencySelector(
-                            modifier = Modifier
-                                .width(140.dp)
-                                .padding(PADDING_LARGE),
-                            selectedCurrency = fromCurrency,
-                            label = "From",
-                            currencyRepository = currencyRepository,
-                        ) {
-                            store.fromCurrency = flowOf(it)
-                        }
-                        CurrencySelector(
-                            modifier = Modifier
-                                .width(140.dp)
-                                .padding(PADDING_LARGE),
-                            selectedCurrency = toCurrency,
-                            label = "To",
-                            currencyRepository = currencyRepository
-                        ) {
-                            store.toCurrency = flowOf(it)
-                        }
-                    }
-                }
-            ) { newValue: ArithmeticChain? ->
-                onMoneyPerWeekChange(newValue / feeAndCurrencyMultiplier)
-            }
-
-            if (toCurrency == "GBP") {
-                val taxCalculator: TaxCalculator = remember { Tax_England_23_24() }
-
-                val taxInfo = remember(moneyPerWeek, feeAndCurrencyMultiplier) {
-                    val perYear: Double? =
-                        (moneyPerWeek * feeAndCurrencyMultiplier * WEEKS_PER_YEAR)?.resolve()
-                    perYear?.let {
-                        val incomeTax = taxCalculator.calculateTax(it)
-                        val nic2Tax = taxCalculator.calculateNIC2(it)
-                        val nic4Tax = taxCalculator.calculateNIC4(it)
-                        val totalTax = incomeTax.totalTax + nic2Tax.totalTax + nic4Tax.totalTax
-
-                        if (incomeTax.breakdown.isNotEmpty() && nic4Tax.breakdown.isNotEmpty()) {
-                            val afterTaxPerWeek: ArithmeticChain? = (it - totalTax) / WEEKS_PER_YEAR
-
-                            TaxCalculationUIModel(
-                                incomeTax = "${incomeTax.totalTax.format(decimalCount = 2)} (allowance: ${incomeTax.breakdown[0].bracket.amount.format()})",
-                                nic2Tax = nic2Tax.totalTax.format(decimalCount = 2),
-                                nic4Tax = "${nic4Tax.totalTax.format(decimalCount = 2)} (allowance: ${nic4Tax.breakdown[0].bracket.amount.format()})",
-                                totalTax = totalTax.format(decimalCount = 2),
-                                afterTaxPerWeek = afterTaxPerWeek!!
-                            )
-                        } else {
-                            null
-                        }
-                    }
-                }
-
-                taxInfo?.let {
-                    TaxContent(taxInfo = taxInfo, store = store)
-                }
-                MoneyOverTime(
-                    sectionId = "TAX",
-                    title = "Net Income",
-                    store = store,
-                    moneyPerWeek = taxInfo?.afterTaxPerWeek,
-                    daysPerWeek = daysPerWeek.value,
-                ) { newValue: ArithmeticChain? ->
-                    val perYear = newValue * WEEKS_PER_YEAR
-                    onMoneyPerWeekChange(
-                        perYear?.resolve()?.let {
-                            taxCalculator.calculateIncomeFromBrut(it)
-                        } / feeAndCurrencyMultiplier / WEEKS_PER_YEAR
-                    )
+                CurrencySelector(
+                    modifier = Modifier
+                        .width(140.dp)
+                        .padding(PADDING_LARGE),
+                    selectedCurrency = toCurrency,
+                    label = "To",
+                    currencyRepository = currencyRepository
+                ) {
+                    store.toCurrency = flowOf(it)
                 }
             }
         }
+    ) { newValue: ArithmeticChain? ->
+        onMoneyPerWeekChange(newValue)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ColumnScope.TaxSection(
+    store: Store,
+    moneyPerWeek: ArithmeticChain?,
+    daysPerWeek: Double?,
+    feeAndExchangeRateMultiplier: ArithmeticChain?,
+    onMoneyPerWeekChange: (value: ArithmeticChain?) -> Unit,
+) {
+
+    val taxCalculator: TaxCalculator = remember { Tax_England_23_24() }
+
+    val taxInfo = remember(moneyPerWeek, feeAndExchangeRateMultiplier) {
+        val perYear: Double? =
+            (moneyPerWeek * feeAndExchangeRateMultiplier * WEEKS_PER_YEAR)?.resolve()
+                ?.toDouble()
+        perYear?.let {
+            val incomeTax = taxCalculator.calculateTax(it)
+            val nic2Tax = taxCalculator.calculateNIC2(it)
+            val nic4Tax = taxCalculator.calculateNIC4(it)
+            val totalTax = incomeTax.totalTax + nic2Tax.totalTax + nic4Tax.totalTax
+
+            if (incomeTax.breakdown.isNotEmpty() && nic4Tax.breakdown.isNotEmpty()) {
+                val afterTaxPerWeek: ArithmeticChain? = (it - totalTax) / WEEKS_PER_YEAR
+
+                TaxCalculationUIModel(
+                    incomeTax = "${incomeTax.totalTax.format(decimalCount = 2)} (allowance: ${incomeTax.breakdown[0].bracket.amount.format()})",
+                    nic2Tax = nic2Tax.totalTax.format(decimalCount = 2),
+                    nic4Tax = "${nic4Tax.totalTax.format(decimalCount = 2)} (allowance: ${nic4Tax.breakdown[0].bracket.amount.format()})",
+                    totalTax = totalTax.format(decimalCount = 2),
+                    afterTaxPerWeek = afterTaxPerWeek!!
+                )
+            } else {
+                null
+            }
+        }
+    }
+
+    taxInfo?.let {
+        TaxContent(taxInfo = taxInfo, store = store)
+    }
+    MoneyOverTime(
+        sectionId = "TAX",
+        title = "Net Income",
+        store = store,
+        moneyPerWeek = taxInfo?.afterTaxPerWeek,
+        daysPerWeek = daysPerWeek,
+    ) { newValue: ArithmeticChain? ->
+        val perYear = newValue * WEEKS_PER_YEAR
+        onMoneyPerWeekChange(
+            perYear?.resolve()?.let {
+                taxCalculator.calculateIncomeFromBrut(it.toDouble())
+            } / feeAndExchangeRateMultiplier / WEEKS_PER_YEAR
+        )
     }
 }
 

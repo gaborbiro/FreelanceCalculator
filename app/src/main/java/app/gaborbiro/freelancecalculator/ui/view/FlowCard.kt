@@ -36,7 +36,7 @@ fun FlowCard(
     ) {
         Column {
             extraContent?.invoke(this)
-            val topPadding = if (title.isNullOrBlank()) 0.dp else PADDING_LARGE
+            val topPadding = if (title.isNullOrBlank() || extraContent != null) 0.dp else PADDING_LARGE
             FlowRow(
                 modifier = Modifier
                     .padding(top = topPadding),

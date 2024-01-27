@@ -30,7 +30,7 @@ class Tax_England_23_24 : TaxCalculator() {
         return super.calculateTax(
             perYear,
             listOf(
-                Bracket(personalAllowance(perYear).toInt(), 0.0),
+                Bracket(personalAllowance(perYear), 0.0),
                 Bracket(INCOME_BASIC_BRACKET, INCOME_BASIC_TAX),
                 Bracket(INCOME_HIGH_BRACKET, INCOME_HIGH_TAX),
                 Bracket(INCOME_ADDITIONAL_BRACKET, INCOME_ADDITIONAL_TAX)
@@ -38,9 +38,9 @@ class Tax_England_23_24 : TaxCalculator() {
         )
     }
 
-    private fun personalAllowance(perYear: Double): Double {
+    private fun personalAllowance(perYear: Double): Int {
         val reduction = (perYear - PA_LIMIT).coerceAtLeast(0.0) / 2
-        return (PERSONAL_ALLOWANCE - reduction).coerceAtLeast(0.0)
+        return (PERSONAL_ALLOWANCE - reduction).coerceAtLeast(0.0).toInt()
     }
 
     override fun calculateNIC2(perYear: Double): TaxCalculationResult {

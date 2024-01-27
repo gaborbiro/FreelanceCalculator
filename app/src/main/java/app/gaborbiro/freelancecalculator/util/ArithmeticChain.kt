@@ -52,19 +52,18 @@ class ArithmeticChain private constructor(private val operands: List<Operand>) {
         }
     }
 
-    fun resolve(): Double {
-        if (operands.isEmpty()) {
-            return 1.0
-        }
-        var result = BigDecimal.ONE.setScale(4, RoundingMode.HALF_UP)
+    fun resolve(): BigDecimal {
+        var result = BigDecimal.ONE
         operands.forEach {
-            if (it.inverse) {
-                result /= BigDecimal(it.value)
+            result = if (it.inverse) {
+                result
+                    .setScale(result.scale().coerceAtLeast(4))
+                    .divide(BigDecimal(it.value), RoundingMode.HALF_UP)
             } else {
-                result *= BigDecimal(it.value)
+                result.multiply(BigDecimal(it.value))
             }
         }
-        return result.toDouble()
+        return result
     }
 
     override fun toString(): String {
@@ -93,7 +92,7 @@ class ArithmeticChain private constructor(private val operands: List<Operand>) {
 
 fun Double?.chainify() = this?.let(::ArithmeticChain)
 
-fun ArithmeticChain?.resolve(): Double? {
+fun ArithmeticChain?.resolve(): BigDecimal? {
     return this?.resolve()
 }
 
