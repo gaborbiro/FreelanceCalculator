@@ -18,6 +18,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -59,7 +60,7 @@ fun CalculatorContent(
 
     val hoursPerWeek: State<ArithmeticChain?> = store.hoursPerWeek.collectAsState(initial = null)
 
-    var moneyPerWeek: ArithmeticChain? by rememberSaveable(feePerHour.value, hoursPerWeek.value) {
+    var moneyPerWeek: ArithmeticChain? by remember(feePerHour.value, hoursPerWeek.value) {
         mutableStateOf(feePerHour.value * hoursPerWeek.value)
     }
 
@@ -73,10 +74,10 @@ fun CalculatorContent(
         onSelected = selectionUpdater(indexCounter),
         onValueChange = { newValue: Double? ->
             CoroutineScope(Dispatchers.IO).launch {
-                when (selectedIndex.value) {
-                    1 -> store.feePerHour = flowOf(newValue.chainify())
-                    2 -> store.feePerHour = flowOf(newValue.chainify())
+                if (selectedIndex.value == 1) {
+                    store.hoursPerWeek = flowOf((moneyPerWeek / newValue)?.simplify())
                 }
+                store.feePerHour = flowOf(newValue.chainify())
             }
         },
     )
@@ -89,11 +90,11 @@ fun CalculatorContent(
         selected = selectedIndex.value == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
         onValueChange = { newValue: Double? ->
-            CoroutineScope(Dispatchers.IO).launch {
-                when (selectedIndex.value) {
-                    0 -> store.hoursPerWeek = flowOf(newValue.chainify())
-                    2 -> store.hoursPerWeek = flowOf(newValue.chainify())
+            CoroutineScope(Dispatchers.IO).launch { // 80, 30 -> moneyPerWeek = 80 x 30; 2400 x 1/3, 3 -> moneyPerWeek = 2400 x 1/3 x 3
+                if (selectedIndex.value == 0) {
+                    store.feePerHour = flowOf((moneyPerWeek / newValue)?.simplify())
                 }
+                store.hoursPerWeek = flowOf(newValue.chainify())
             }
         },
     )
@@ -109,8 +110,8 @@ fun CalculatorContent(
             moneyPerWeek = newValue
             CoroutineScope(Dispatchers.IO).launch {
                 when (selectedIndex.value) {
-                    0 -> store.feePerHour = flowOf(moneyPerWeek / hoursPerWeek.value)
-                    1 -> store.hoursPerWeek = flowOf(moneyPerWeek / feePerHour.value)
+                    0 -> store.feePerHour = flowOf((moneyPerWeek / hoursPerWeek.value)?.simplify())
+                    1 -> store.hoursPerWeek = flowOf((moneyPerWeek / feePerHour.value)?.simplify())
                 }
             }
         },

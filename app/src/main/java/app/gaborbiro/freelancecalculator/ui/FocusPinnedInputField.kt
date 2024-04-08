@@ -37,8 +37,12 @@ fun FocusPinnedInputField(
     ) {
         previousValue = it
         val number = it.strictParse()
-        if (value.strictParse() != number) {
-            onValueChange(number)
+        if (number != 0.0) {
+            if (value.strictParse() != number) {
+                onValueChange(number)
+            }
+        } else {
+            onValueChange(null)
         }
         value = it
     }

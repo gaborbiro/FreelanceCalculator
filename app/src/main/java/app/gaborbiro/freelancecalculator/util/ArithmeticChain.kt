@@ -70,6 +70,10 @@ class ArithmeticChain private constructor(private val operands: List<Operand>) {
         return result
     }
 
+    fun simplify(): ArithmeticChain {
+        return resolve().toDouble().chainify()!!
+    }
+
     override fun toString(): String {
         return operands.joinToString(" * ")
     }
@@ -77,7 +81,7 @@ class ArithmeticChain private constructor(private val operands: List<Operand>) {
     private data class Operand(val value: Double, val inverse: Boolean) {
 
         init {
-            if (value == 0.0) throw IllegalArgumentException("Operand can never be 0")
+            if (value == 0.0) throw IllegalArgumentException("Operand can never be 0 (inverse: $inverse)")
         }
 
         fun inverse(): Operand {
