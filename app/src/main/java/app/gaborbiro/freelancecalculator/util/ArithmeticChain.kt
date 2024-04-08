@@ -6,7 +6,11 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 /**
- * Note: operator priority is not supported. Parentheses will have no effect.
+ * Encapsulates a chain of multiplication/division operations. The [resolve] call will first
+ * check for any operands that cancel out and remove them, before calculating the result.
+ *
+ * Using * or / signs is supported (with doubles or other [ArithmeticChain]s), but parentheses have no effect.
+ * [ArithmeticChain]s are simply concatenated.
  */
 class ArithmeticChain private constructor(private val operands: List<Operand>) {
 

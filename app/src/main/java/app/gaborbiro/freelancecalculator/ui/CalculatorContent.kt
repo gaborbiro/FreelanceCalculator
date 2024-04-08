@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -40,7 +39,7 @@ import kotlinx.coroutines.launch
 
 
 @Composable
-fun MainContent(
+fun CalculatorContent(
     store: Store,
     currencyRepository: CurrencyRepository,
 ) {
@@ -74,7 +73,10 @@ fun MainContent(
         onSelected = selectionUpdater(indexCounter),
         onValueChange = { newValue: Double? ->
             CoroutineScope(Dispatchers.IO).launch {
-                store.feePerHour = flowOf(newValue.chainify())
+                when (selectedIndex.value) {
+                    1 -> store.feePerHour = flowOf(newValue.chainify())
+                    2 -> store.feePerHour = flowOf(newValue.chainify())
+                }
             }
         },
     )
@@ -88,7 +90,10 @@ fun MainContent(
         onSelected = selectionUpdater(indexCounter),
         onValueChange = { newValue: Double? ->
             CoroutineScope(Dispatchers.IO).launch {
-                store.hoursPerWeek = flowOf(newValue.chainify())
+                when (selectedIndex.value) {
+                    0 -> store.hoursPerWeek = flowOf(newValue.chainify())
+                    2 -> store.hoursPerWeek = flowOf(newValue.chainify())
+                }
             }
         },
     )
@@ -114,7 +119,7 @@ fun MainContent(
 
 @Preview
 @Composable
-private fun MainContentPreview() {
+private fun CalculatorContentPreview() {
     FreelanceCalculatorTheme(dynamicColor = false) {
         Surface(
             modifier = Modifier
@@ -127,7 +132,7 @@ private fun MainContentPreview() {
                     .padding(vertical = PADDING_LARGE),
                 verticalArrangement = Arrangement.spacedBy(PADDING_LARGE),
             ) {
-                MainContent(
+                CalculatorContent(
                     Store.dummyImplementation(),
                     CurrencyRepository.dummyImplementation(),
                 )

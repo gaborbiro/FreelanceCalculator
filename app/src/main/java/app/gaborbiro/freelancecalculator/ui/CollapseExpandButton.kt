@@ -21,7 +21,7 @@ import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 
 @Composable
 fun CollapseExpandButton(modifier: Modifier, id: String, sectionExpander: TypedSubStore<Boolean>) {
-    val expanded: Boolean? by sectionExpander[id].collectAsState(initial = false)
+    val expanded: Boolean? by sectionExpander[id].collectAsState(initial = true)
     Box(
         modifier = modifier
     ) {

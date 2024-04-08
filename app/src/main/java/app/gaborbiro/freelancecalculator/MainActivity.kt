@@ -19,7 +19,7 @@ import app.gaborbiro.freelancecalculator.persistence.StoreImpl
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.repo.currency.CurrencyRepositoryImpl
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
-import app.gaborbiro.freelancecalculator.ui.MainContent
+import app.gaborbiro.freelancecalculator.ui.CalculatorContent
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import kotlinx.coroutines.CoroutineScope
@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
                             .padding(vertical = PADDING_LARGE),
                         verticalArrangement = Arrangement.spacedBy(PADDING_LARGE),
                     ) {
-                        MainContent(store, currencyRepository)
+                        CalculatorContent(store, currencyRepository)
                     }
                 }
             }

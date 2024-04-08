@@ -37,7 +37,7 @@ fun ColumnScope.MoneyOverTime(
     onMoneyPerWeekChange: (newValue: ArithmeticChain?) -> Unit,
 ) {
     val sectionExpander: TypedSubStore<Boolean> = store.sectionExpander()
-    val expanded: Boolean? by sectionExpander[sectionId].collectAsState(initial = false)
+    val expanded: Boolean? by sectionExpander[sectionId].collectAsState(initial = true)
     FlowCard(
         modifier = Modifier
             .animateContentSize(),
