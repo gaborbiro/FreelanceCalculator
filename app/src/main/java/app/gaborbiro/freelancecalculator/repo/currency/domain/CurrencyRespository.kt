@@ -7,15 +7,20 @@ import io.reactivex.Observable
 interface CurrencyRepository {
     val currencies: Observable<Lce<List<String>>>
 
-    fun getRate(from: String, to: String): Observable<Lce<Double>>
+    fun getRate(from: String, to: String): Observable<Lce<ExchangeRate>>
 
     companion object {
         fun dummyImplementation() = object : CurrencyRepository {
             override val currencies: Observable<Lce<List<String>>> =
                 Observable.just(Lce.Data(listOf("USD", "GBP")))
 
-            override fun getRate(from: String, to: String): Observable<Lce<Double>> =
-                Observable.just(Lce.Data(1.0))
+            override fun getRate(from: String, to: String): Observable<Lce<ExchangeRate>> =
+                Observable.just(Lce.Data(ExchangeRate(1.0, "now")))
         }
     }
+
+    data class ExchangeRate(
+        val rate: Double,
+        val since: String,
+    )
 }

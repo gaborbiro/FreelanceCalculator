@@ -22,7 +22,9 @@ interface Store {
 
     var toCurrency: Flow<String?>
 
-    fun sectionExpander(): TypedSubStore<Boolean>
+    fun sectionExpander(): MapDelegate<Boolean, Boolean>
+
+    fun registry(): MapDelegate<ArithmeticChain, String>
 
     companion object {
         fun dummyImplementation(
@@ -33,7 +35,6 @@ interface Store {
             fee: Double = 8.0,
             fromCurrency: String = "USD",
             toCurrency: String = "GBP",
-            sectionExpanded: Map<String, Boolean> = emptyMap(),
         ) = object : Store {
             override var selectedIndex: Flow<Int?> = flowOf(selectedIndex)
             override var feePerHour: Flow<ArithmeticChain?> = flowOf(feePerHour.chainify())
@@ -42,8 +43,8 @@ interface Store {
             override var fee: Flow<Double?> = flowOf(fee)
             override var fromCurrency: Flow<String?> = flowOf(fromCurrency)
             override var toCurrency: Flow<String?> = flowOf(toCurrency)
-            override fun sectionExpander(): TypedSubStore<Boolean> =
-                TypedSubStore.dummyImplementation(sectionExpanded)
+            override fun sectionExpander() = MapDelegate.dummyImplementation<Boolean, Boolean>()
+            override fun registry() = MapDelegate.dummyImplementation<ArithmeticChain, String>()
         }
     }
 }

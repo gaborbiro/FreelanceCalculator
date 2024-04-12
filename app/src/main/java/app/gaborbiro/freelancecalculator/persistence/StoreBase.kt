@@ -9,31 +9,30 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import app.gaborbiro.freelancecalculator.persistence.domain.TypedSubStore
-import app.gaborbiro.freelancecalculator.util.ArithmeticChain
+import app.gaborbiro.freelancecalculator.persistence.domain.MapDelegate
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("preferences")
 
-abstract class StoreBase(context: Context, private val scope: CoroutineScope) {
+abstract class StoreBase(context: Context, protected val scope: CoroutineScope) {
 
-    private val gson = Gson()
+    protected val gson = Gson()
 
-    private val prefs: DataStore<Preferences> = context.dataStore
+    protected val prefs: DataStore<Preferences> = context.dataStore
 
-    protected fun arithmeticChainDelegate(key: String): PrefsDelegate<ArithmeticChain, String> {
+    protected inline fun <reified T> gsonSerializedPrefsDelegate(key: String): PrefsDelegate<T, String> {
         return PrefsDelegate(
             key = stringPreferencesKey(key),
             scope = scope,
             prefs = prefs,
-            mapper = object : Mapper<ArithmeticChain, String> {
+            mapper = object : Mapper<T, String> {
 
-                private val cache: LruCache<String, ArithmeticChain> =
+                private val cache: LruCache<String, T> =
                     LruCache(1 * 1024 * 1024) // 1MB
 
-                override fun toType(value: ArithmeticChain?): String? {
+                override fun toStoreType(value: T?): String? {
                     return value?.let {
                         val mappedValue = gson.toJson(it)
                         cache.put(mappedValue, it)
@@ -41,10 +40,43 @@ abstract class StoreBase(context: Context, private val scope: CoroutineScope) {
                     }
                 }
 
-                override fun fromType(value: String?): ArithmeticChain? {
+                override fun fromStoreType(value: String?): T? {
                     return value?.let { value ->
                         cache[value]
-                            ?: gson.fromJson(value, ArithmeticChain::class.java)
+                            ?: gson.fromJson(value, T::class.java)
+                                .also {
+                                    cache.put(value, it)
+                                }
+                    }
+                }
+            }
+        )
+    }
+
+    protected inline fun <reified T> gsonSerializedMapDelegate(
+        key: String,
+        size: Int = 1 * 1024 * 1024, // 1MB
+    ): MapDelegate<T, String> {
+        return MapDelegateImpl(
+            key = { stringPreferencesKey("${key}_$it") },
+            scope = scope,
+            prefs = prefs,
+            mapper = object : Mapper<T, String> {
+
+                private val cache: LruCache<String, T> = LruCache(size)
+
+                override fun toStoreType(value: T?): String? {
+                    return value?.let {
+                        val serialised = gson.toJson(it)
+                        cache.put(serialised, it)
+                        serialised
+                    }
+                }
+
+                override fun fromStoreType(value: String?): T? {
+                    return value?.let { value ->
+                        cache[value]
+                            ?: gson.fromJson(value, T::class.java)
                                 .also {
                                     cache.put(value, it)
                                 }
@@ -78,8 +110,8 @@ abstract class StoreBase(context: Context, private val scope: CoroutineScope) {
         )
     }
 
-    protected fun booleanSubDelegate(key: String): TypedSubStore<Boolean> {
-        return TypedSubStoreImpl(
+    protected fun booleanMapDelegate(key: String): MapDelegate<Boolean, Boolean> {
+        return MapDelegateImpl(
             key = { booleanPreferencesKey("${key}_$it") },
             scope = scope,
             prefs = prefs,

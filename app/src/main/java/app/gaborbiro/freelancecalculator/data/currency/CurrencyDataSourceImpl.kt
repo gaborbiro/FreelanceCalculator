@@ -17,6 +17,7 @@ import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import org.reactivestreams.Publisher
 import java.io.InputStreamReader
+import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
 
@@ -53,16 +54,22 @@ class CurrencyDataSourceImpl(private val appContext: Context) : CurrencyDataSour
     override val currencies: Single<List<String>> = refreshCurrencies
         .map { it.currencies.keys.toList() }
 
-    private val refreshRate: MutableMap<Pair<String, String>, Single<ApiConversionResult>> =
+    private val refreshRate: MutableMap<Pair<String, String>, Single<CurrencyDataSource.ConversionRate>> =
         mutableMapOf()
 
-    override fun getRate(from: String, to: String): Single<Double> {
+    override fun getRate(from: String, to: String): Single<CurrencyDataSource.ConversionRate> {
         return (refreshRate[from to to] ?: run {
             refreshRate[from to to] =
-                call<ApiConversionResult>("convert?format=json&from=$from&to=$to&amount=1").cache()
+                call<ApiConversionResult>("convert?format=json&from=$from&to=$to&amount=1")
+                    .map {
+                        CurrencyDataSource.ConversionRate(
+                            rate = it.rates[to]!!.rate,
+                            since = LocalDateTime.now(),
+                        )
+                    }
+                    .cache()
             refreshRate[from to to]!!
         })
-            .map { it.rates[to]!!.rate }
     }
 
     private inline fun <reified T> call(path: String): Single<T> {

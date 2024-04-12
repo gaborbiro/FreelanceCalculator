@@ -1,10 +1,9 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package app.gaborbiro.freelancecalculator.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,14 +18,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
+import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
+import app.gaborbiro.freelancecalculator.ui.view.SingleInputContainer
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
@@ -51,7 +50,7 @@ fun CalculatorContent(
         store.selectedIndex = flowOf(indexCounter)
     }
 
-    val containerModifier = Modifier
+    val selectableContainerModifier = Modifier
         .fillMaxWidth()
         .padding(horizontal = PADDING_LARGE)
 
@@ -60,13 +59,13 @@ fun CalculatorContent(
 
     val hoursPerWeek: State<ArithmeticChain?> = store.hoursPerWeek.collectAsState(initial = null)
 
-    var moneyPerWeek: ArithmeticChain? by remember(feePerHour.value, hoursPerWeek.value) {
+    val moneyPerWeek: ArithmeticChain? by remember(feePerHour.value, hoursPerWeek.value) {
         mutableStateOf(feePerHour.value * hoursPerWeek.value)
     }
 
     @Suppress("KotlinConstantConditions")
     SingleInputContainer(
-        containerModifier = containerModifier,
+        containerModifier = selectableContainerModifier,
         label = "Fee per hour",
         value = feePerHour.value.resolve().format(decimalCount = 2),
         clearButtonVisible = true,
@@ -83,14 +82,14 @@ fun CalculatorContent(
     )
 
     SingleInputContainer(
-        containerModifier = containerModifier,
+        containerModifier = selectableContainerModifier,
         label = "Hours per week",
         value = hoursPerWeek.value.resolve().format(decimalCount = 0),
         clearButtonVisible = true,
         selected = selectedIndex.value == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
         onValueChange = { newValue: Double? ->
-            CoroutineScope(Dispatchers.IO).launch { // 80, 30 -> moneyPerWeek = 80 x 30; 2400 x 1/3, 3 -> moneyPerWeek = 2400 x 1/3 x 3
+            CoroutineScope(Dispatchers.IO).launch {
                 if (selectedIndex.value == 0) {
                     store.feePerHour = flowOf((moneyPerWeek / newValue)?.simplify())
                 }
@@ -99,23 +98,32 @@ fun CalculatorContent(
         },
     )
 
-    OutputSection(
-        containerModifier = containerModifier,
+    SelectableContainer(
+        modifier = selectableContainerModifier,
         selected = selectedIndex.value == ++indexCounter,
-        moneyPerWeek = moneyPerWeek,
-        store = store,
-        currencyRepository = currencyRepository,
         onSelected = selectionUpdater(indexCounter),
-        onMoneyPerWeekChange = { newValue: ArithmeticChain? ->
-            moneyPerWeek = newValue
-            CoroutineScope(Dispatchers.IO).launch {
-                when (selectedIndex.value) {
-                    0 -> store.feePerHour = flowOf((moneyPerWeek / hoursPerWeek.value)?.simplify())
-                    1 -> store.hoursPerWeek = flowOf((moneyPerWeek / feePerHour.value)?.simplify())
-                }
-            }
-        },
-    )
+    ) { modifier ->
+        Column(
+            modifier = modifier
+                .padding(bottom = PADDING_LARGE)
+        ) {
+            ResultsSection(
+                store = store,
+                currencyRepository = currencyRepository,
+                onMoneyPerWeekChange = { newValue: ArithmeticChain? ->
+                    CoroutineScope(Dispatchers.IO).launch {
+                        when (selectedIndex.value) {
+                            0 -> store.feePerHour =
+                                flowOf((newValue / hoursPerWeek.value)?.simplify())
+
+                            1 -> store.hoursPerWeek =
+                                flowOf((newValue / feePerHour.value)?.simplify())
+                        }
+                    }
+                },
+            )
+        }
+    }
 }
 
 @Preview

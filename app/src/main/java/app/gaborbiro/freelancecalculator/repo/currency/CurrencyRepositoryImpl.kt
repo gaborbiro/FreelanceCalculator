@@ -8,6 +8,7 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.io.IOException
+import java.time.format.DateTimeFormatter
 
 
 class CurrencyRepositoryImpl(private val dataSource: CurrencyDataSource) :
@@ -25,9 +26,20 @@ class CurrencyRepositoryImpl(private val dataSource: CurrencyDataSource) :
             it.sorted()
         }).cache()
 
-    override fun getRate(from: String, to: String): Observable<Lce<Double>> {
-//        return Observable.just(Lce.Data(1.0))
-        return prepare(dataSource.getRate(from, to))
+    override fun getRate(
+        from: String,
+        to: String
+    ): Observable<Lce<CurrencyRepository.ExchangeRate>> {
+        return prepare(
+            dataSource
+                .getRate(from, to)
+                .map {
+                    CurrencyRepository.ExchangeRate(
+                        rate = it.rate,
+                        since = it.since.format(DateTimeFormatter.ofPattern("dd/MMM HH:mm"))
+                    )
+                }
+        )
     }
 
     private fun <T> prepare(single: Single<T>): Observable<Lce<T>> {

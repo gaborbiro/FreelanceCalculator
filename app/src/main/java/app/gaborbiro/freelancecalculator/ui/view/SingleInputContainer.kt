@@ -1,4 +1,4 @@
-package app.gaborbiro.freelancecalculator.ui
+package app.gaborbiro.freelancecalculator.ui.view
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -7,8 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
-import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
-import java.math.BigDecimal
 
 
 @ExperimentalMaterial3Api

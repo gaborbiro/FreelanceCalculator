@@ -11,6 +11,14 @@ import kotlinx.coroutines.launch
 import kotlin.reflect.KProperty
 
 
+/**
+ * A delegate that executes get/set operations applied to a var by fetching/saving the piece of data
+ * it was associated with by the [key] argument in the constructor.
+ *
+ * It can have a type, but also an underlying storage type. If a mapper is available, the data is
+ * stored in the underlying format instead as the main type. If you don't need an underlying format,
+ * make [T] and [S] have the same value and set the [mapper] to null.
+ */
 class PrefsDelegate<T, S>(
     private val key: Preferences.Key<S>,
     private val scope: CoroutineScope,
@@ -20,24 +28,20 @@ class PrefsDelegate<T, S>(
 
     operator fun getValue(thisRef: Any?, property: KProperty<*>): Flow<T?> {
         return prefs.data.map {
-            if (mapper != null) {
-                mapper.fromType(it[key])
-            } else {
-                it[key] as T?
-            }
+            mapper
+                ?.fromStoreType(it[key])
+                ?: it[key] as T?
         }
     }
 
     operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Flow<T?>) {
         scope.launch {
             prefs.edit { pref ->
-                value.collectLatest {
-                    if (it != null) {
-                        if (mapper != null) {
-                            pref[key] = mapper.toType(it)!!
-                        } else {
-                            pref[key] = it as S
-                        }
+                value.collectLatest { latest ->
+                    if (latest != null) {
+                        pref[key] = mapper
+                            ?.let { it.toStoreType(latest)!! }
+                            ?: latest as S
                     } else {
                         pref.remove(key)
                     }
@@ -48,6 +52,6 @@ class PrefsDelegate<T, S>(
 }
 
 interface Mapper<T, S> {
-    fun toType(value: T?): S?
-    fun fromType(value: S?): T?
+    fun toStoreType(value: T?): S?
+    fun fromStoreType(value: S?): T?
 }
