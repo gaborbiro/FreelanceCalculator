@@ -33,18 +33,21 @@ import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.times
 
+/**
+ * @param collapseId globally unique
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @ExperimentalMaterial3Api
 @Composable
 fun ColumnScope.MoneyOverTime(
-    sectionId: String,
+    collapseId: String,
     title: String? = null,
     store: Store,
     moneyPerWeek: ArithmeticChain?,
     extraContent: (@Composable ColumnScope.() -> Unit)? = null,
     onMoneyPerWeekChange: (newValue: ArithmeticChain?) -> Unit,
 ) {
-    val expanded: Boolean? by store.sectionExpander()[sectionId].collectAsState(initial = true)
+    val expanded: Boolean? by store.sectionExpander[collapseId].collectAsState(initial = true)
     val daysPerWeek by store.daysPerWeek.collectAsState(initial = null)
 
     FlowCard(
@@ -108,8 +111,8 @@ fun ColumnScope.MoneyOverTime(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .weight(1f),
-            id = sectionId,
-            sectionExpander = store.sectionExpander(),
+            collapseId = collapseId,
+            sectionExpander = store.sectionExpander,
         )
     }
 }
@@ -131,7 +134,7 @@ private fun MoneyOverTimePreview() {
                 verticalArrangement = Arrangement.spacedBy(PADDING_LARGE),
             ) {
                 MoneyOverTime(
-                    sectionId = "dummy",
+                    collapseId = "dummy",
                     store = Store.dummyImplementation(),
                     moneyPerWeek = 1.0.chainify(),
                     onMoneyPerWeekChange = { }

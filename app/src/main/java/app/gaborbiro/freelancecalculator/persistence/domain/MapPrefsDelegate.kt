@@ -4,14 +4,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 
-interface MapDelegate<T, S> {
+interface MapPrefsDelegate<T> {
     operator fun get(subKey: String): Flow<T?>
-
     operator fun set(subKey: String, value: T?)
 
     companion object {
-        fun <T, S> dummyImplementation(value: Map<String, T> = emptyMap()): MapDelegate<T, S> {
-            return object : MapDelegate<T, S> {
+        fun <T> dummyImplementation(value: Map<String, T> = emptyMap()): MapPrefsDelegate<T> {
+            return object : MapPrefsDelegate<T> {
                 override fun get(subKey: String): Flow<T?> {
                     return flowOf(value[subKey])
                 }

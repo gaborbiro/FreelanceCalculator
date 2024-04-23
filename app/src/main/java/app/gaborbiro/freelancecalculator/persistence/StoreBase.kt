@@ -9,110 +9,97 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import app.gaborbiro.freelancecalculator.persistence.domain.MapDelegate
+import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
+import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegate
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("preferences")
 
-abstract class StoreBase(context: Context, protected val scope: CoroutineScope) {
+internal abstract class StoreBase(context: Context, protected val scope: CoroutineScope) {
 
     protected val gson = Gson()
 
     protected val prefs: DataStore<Preferences> = context.dataStore
 
-    protected inline fun <reified T> gsonSerializedPrefsDelegate(key: String): PrefsDelegate<T, String> {
-        return PrefsDelegate(
+    protected inline fun <reified T> gsonSerializablePrefsDelegate(
+        key: String,
+        size: Int = 1 * 1024 * 1024, // 1MB
+    ): PrefsDelegate<T> {
+        return PrefsDelegateImpl(
             key = stringPreferencesKey(key),
             scope = scope,
             prefs = prefs,
-            mapper = object : Mapper<T, String> {
-
-                private val cache: LruCache<String, T> =
-                    LruCache(1 * 1024 * 1024) // 1MB
-
-                override fun toStoreType(value: T?): String? {
-                    return value?.let {
-                        val mappedValue = gson.toJson(it)
-                        cache.put(mappedValue, it)
-                        mappedValue
-                    }
-                }
-
-                override fun fromStoreType(value: String?): T? {
-                    return value?.let { value ->
-                        cache[value]
-                            ?: gson.fromJson(value, T::class.java)
-                                .also {
-                                    cache.put(value, it)
-                                }
-                    }
-                }
-            }
+            mapper = getPrefsDelegateMapper(size, T::class.java),
         )
     }
 
-    protected inline fun <reified T> gsonSerializedMapDelegate(
-        key: String,
+    protected inline fun <reified T> gsonSerializableMapPrefsDelegate(
+        keyBase: String,
         size: Int = 1 * 1024 * 1024, // 1MB
-    ): MapDelegate<T, String> {
-        return MapDelegateImpl(
-            key = { stringPreferencesKey("${key}_$it") },
+    ): MapPrefsDelegate<T> {
+        return MapPrefsDelegateImpl(
+            key = keyBase,
+            createKey = { stringPreferencesKey(it) },
             scope = scope,
             prefs = prefs,
-            mapper = object : Mapper<T, String> {
-
-                private val cache: LruCache<String, T> = LruCache(size)
-
-                override fun toStoreType(value: T?): String? {
-                    return value?.let {
-                        val serialised = gson.toJson(it)
-                        cache.put(serialised, it)
-                        serialised
-                    }
-                }
-
-                override fun fromStoreType(value: String?): T? {
-                    return value?.let { value ->
-                        cache[value]
-                            ?: gson.fromJson(value, T::class.java)
-                                .also {
-                                    cache.put(value, it)
-                                }
-                    }
-                }
-            }
+            mapper = getPrefsDelegateMapper(size, T::class.java),
         )
     }
 
-    protected fun intDelegate(key: String): PrefsDelegate<Int, Int> {
-        return PrefsDelegate(
+    fun <T> getPrefsDelegateMapper(size: Int, type: Class<T>): Mapper<T, String> =
+        object : Mapper<T, String> {
+
+            private val cache: LruCache<String, T> = LruCache(size)
+
+            override fun toStoreType(value: T?): String? {
+                return value?.let {
+                    val serialised = gson.toJson(it)
+                    cache.put(serialised, it)
+                    serialised
+                }
+            }
+
+            override fun fromStoreType(serialised: String?): T? {
+                return serialised?.let { serialised ->
+                    cache[serialised]
+                        ?: gson.fromJson(serialised, type)
+                            .also {
+                                cache.put(serialised, it)
+                            }
+                }
+            }
+        }
+
+    protected fun intDelegate(key: String): PrefsDelegate<Int> {
+        return PrefsDelegateImpl(
             key = intPreferencesKey(key),
             scope = scope,
             prefs = prefs,
         )
     }
 
-    protected fun doubleDelegate(key: String): PrefsDelegate<Double, Double> {
-        return PrefsDelegate(
+    protected fun doubleDelegate(key: String): PrefsDelegate<Double> {
+        return PrefsDelegateImpl(
             key = doublePreferencesKey(key),
             scope = scope,
             prefs = prefs,
         )
     }
 
-    protected fun stringDelegate(key: String): PrefsDelegate<String, String> {
-        return PrefsDelegate(
+    protected fun stringDelegate(key: String): PrefsDelegate<String> {
+        return PrefsDelegateImpl(
             key = stringPreferencesKey(key),
             scope = scope,
             prefs = prefs,
         )
     }
 
-    protected fun booleanMapDelegate(key: String): MapDelegate<Boolean, Boolean> {
-        return MapDelegateImpl(
-            key = { booleanPreferencesKey("${key}_$it") },
+    protected fun booleanMapPrefsDelegate(keyBase: String): MapPrefsDelegate<Boolean> {
+        return MapPrefsDelegateImpl(
+            key = keyBase,
+            createKey = { booleanPreferencesKey(it) },
             scope = scope,
             prefs = prefs,
         )

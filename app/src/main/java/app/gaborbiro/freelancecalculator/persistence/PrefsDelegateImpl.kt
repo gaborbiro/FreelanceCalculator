@@ -3,38 +3,41 @@ package app.gaborbiro.freelancecalculator.persistence
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.reflect.KProperty
 
-
 /**
- * A delegate that executes get/set operations applied to a var by fetching/saving the piece of data
- * it was associated with by the [key] argument in the constructor.
+ * A delegate that knows how to read/write a DataStore of type Preferences. This simplifies
+ * persistence by allowing the user to simply read/write a kotlin variable.
  *
- * It can have a type, but also an underlying storage type. If a mapper is available, the data is
- * stored in the underlying format instead as the main type. If you don't need an underlying format,
- * make [T] and [S] have the same value and set the [mapper] to null.
+ * The implementation allows for the underlying storage format to be different from the actual type
+ * of the data, in order to allow storage (serialization) of complex data types.
+ * Note, that the type of the key must always match the storage format in this case.
+ *
+ * If you don't need this, make [T] and [S] the same and set the [mapper] to null.
  */
-class PrefsDelegate<T, S>(
+class PrefsDelegateImpl<T, S>(
     private val key: Preferences.Key<S>,
     private val scope: CoroutineScope,
     private val prefs: DataStore<Preferences>,
     private val mapper: Mapper<T, S>? = null,
-) {
+) : PrefsDelegate<T> {
 
-    operator fun getValue(thisRef: Any?, property: KProperty<*>): Flow<T?> {
-        return prefs.data.map {
+    override operator fun getValue(thisRef: Any?, property: KProperty<*>): Flow<T?> {
+        return prefs.data.map { prefs ->
             mapper
-                ?.fromStoreType(it[key])
-                ?: it[key] as T?
-        }
+                ?.fromStoreType(prefs[key])
+                ?: prefs[key] as T?
+        }.distinctUntilChanged()
     }
 
-    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Flow<T?>) {
+    override operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Flow<T?>) {
         scope.launch {
             prefs.edit { pref ->
                 value.collectLatest { latest ->
@@ -51,7 +54,3 @@ class PrefsDelegate<T, S>(
     }
 }
 
-interface Mapper<T, S> {
-    fun toStoreType(value: T?): S?
-    fun fromStoreType(value: S?): T?
-}

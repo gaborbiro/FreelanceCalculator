@@ -19,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import app.gaborbiro.freelancecalculator.persistence.domain.MapDelegate
+import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_HALF
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_MEDIUM
@@ -30,8 +30,10 @@ import app.gaborbiro.freelancecalculator.util.chainify
 @Composable
 fun TaxBreakdownSection(
     taxModel: TaxBreakdownUIModel,
-    sectionExpander: MapDelegate<Boolean, Boolean>,
+    sectionExpander: MapPrefsDelegate<Boolean>,
 ) {
+    val collapseId = "tax_breakdown"
+
     Row {
         Column(
             modifier = Modifier
@@ -39,7 +41,7 @@ fun TaxBreakdownSection(
                 .padding(bottom = PADDING_LARGE, top = PADDING_LARGE)
                 .weight(.85f)
         ) {
-            val expanded: Boolean? by sectionExpander["tax"].collectAsState(initial = true)
+            val expanded: Boolean? by sectionExpander[collapseId].collectAsState(initial = true)
 
             AnimatedVisibility(
                 enter = fadeIn(),
@@ -84,7 +86,7 @@ fun TaxBreakdownSection(
             modifier = Modifier
                 .align(Alignment.Bottom)
                 .weight(.15f),
-            id = "tax",
+            collapseId = collapseId,
             sectionExpander = sectionExpander
         )
     }
@@ -140,7 +142,7 @@ private fun TaxBreakdownSectionPreview() {
     ) {
         TaxBreakdownSection(
             taxModel = TaxBreakdownUIModel.dummyData(),
-            sectionExpander = MapDelegate.dummyImplementation()
+            sectionExpander = MapPrefsDelegate.dummyImplementation()
         )
     }
 }

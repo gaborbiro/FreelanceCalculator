@@ -18,7 +18,7 @@ fun SingleInputContainer(
     clearButtonVisible: Boolean = false,
     selected: Boolean,
     onSelected: () -> Unit,
-    onValueChange: (value: Double?) -> Unit,
+    onValueChanged: (value: Double?) -> Unit,
 ) {
     SelectableContainer(
         modifier = containerModifier,
@@ -31,7 +31,7 @@ fun SingleInputContainer(
             value = value,
             outlined = true,
             clearButtonVisible = clearButtonVisible,
-            onValueChange = onValueChange,
+            onValueChange = onValueChanged,
         )
     }
 }
@@ -49,6 +49,6 @@ private fun SingleInputContainerPreview() {
         clearButtonVisible = true,
         selected = true,
         onSelected = { },
-        onValueChange = { },
+        onValueChanged = { },
     )
 }

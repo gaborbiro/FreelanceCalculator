@@ -20,77 +20,79 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
-import app.gaborbiro.freelancecalculator.ui.view.MoneyOverTime
 import app.gaborbiro.freelancecalculator.ui.model.ExchangeRateUIModel
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
+import app.gaborbiro.freelancecalculator.ui.view.MoneyOverTime
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.Lce
-import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("FlowOperatorInvokedInComposition")
 @Composable
 fun ColumnScope.CurrencySection(
+    inputId: String,
+    sectionId: String,
+    title: String,
     store: Store,
     currencyRepository: CurrencyRepository,
-    onMoneyPerWeekChange: (value: ArithmeticChain?) -> Unit,
+    onMoneyPerWeekChanged: (ArithmeticChain?) -> Unit,
 ) {
     val fromCurrency by store.fromCurrency.collectAsState(initial = null)
     val toCurrency by store.toCurrency.collectAsState(initial = null)
 
-    if (fromCurrency == null || toCurrency == null) {
-        return
-    }
+    val moneyPerWeek by store
+        .registry["${inputId}:${Store.DATA_ID_MONEY_PER_WEEK}"]
+        .collectAsState(initial = null)
 
-    val fee by store.fee.collectAsState(initial = null)
-    val feeMultiplier = fee?.let { 1.0 - (it / 100.0) }.chainify()
-    val feePerHour by store.feePerHour.collectAsState(initial = null)
-    val hoursPerWeek by store.hoursPerWeek.collectAsState(initial = null)
-    var exchangeRate: ExchangeRateUIModel by remember {
+    val savedRate by store.exchangeRates[sectionId].collectAsState(initial = null)
+    var rateUIModel: ExchangeRateUIModel by remember(savedRate) {
         mutableStateOf(
-            ExchangeRateUIModel(
-                rate = null,
-                since = ""
-            )
+            savedRate ?: ExchangeRateUIModel(rate = null, since = "")
         )
     }
 
-    val newRate = remember(fromCurrency, toCurrency) {
-        currencyRepository.getRate(
-            fromCurrency!!,
-            toCurrency!!
-        )
-    }
-        .subscribeAsState(Lce.Loading).value
-
-    when (newRate) {
-        is Lce.Loading -> {
-            exchangeRate = exchangeRate.copy(since = "Loading...")
-        }
-
-        is Lce.Data -> {
-            exchangeRate = exchangeRate.copy(
-                rate = newRate.data.rate,
-                since = "Refreshed at:\n${newRate.data.since}"
+    if (fromCurrency != null && toCurrency != null) {
+        val rateResult = remember(fromCurrency, toCurrency) {
+            currencyRepository.getRate(
+                fromCurrency!!,
+                toCurrency!!
             )
         }
+            .subscribeAsState(Lce.Loading).value
 
-        is Lce.Error -> {
-            Toast.makeText(
-                LocalContext.current,
-                newRate.throwable.message,
-                Toast.LENGTH_SHORT
-            ).show()
+        when (rateResult) {
+            is Lce.Loading -> {
+                rateUIModel = rateUIModel.copy(since = "Loading...")
+            }
+
+            is Lce.Data -> {
+                store.exchangeRates[sectionId] = rateUIModel.copy(
+                    rate = rateResult.data.rate,
+                    since = "Refreshed at:\n${rateResult.data.since}"
+                )
+            }
+
+            is Lce.Error -> {
+                Toast.makeText(
+                    LocalContext.current,
+                    rateResult.throwable.message,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
+
+    val outputMoneyPerWeek = moneyPerWeek * rateUIModel.rate
+    store.registry["${sectionId}:${Store.DATA_ID_MONEY_PER_WEEK}"] = outputMoneyPerWeek
 
     MoneyOverTime(
-        sectionId = "currency",
-        title = "Currency conversion",
+        collapseId = "${sectionId}:currency",
+        title = title,
         store = store,
-        moneyPerWeek = feePerHour * hoursPerWeek * feeMultiplier * exchangeRate.rate,
+        moneyPerWeek = outputMoneyPerWeek,
         extraContent = {
             Row {
                 CurrencySelector(
@@ -116,14 +118,14 @@ fun ColumnScope.CurrencySection(
                 Text(
                     modifier = Modifier
                         .padding(top = PADDING_LARGE),
-                    text = exchangeRate.since,
+                    text = rateUIModel.since,
                     fontSize = 10.sp,
                     lineHeight = 12.sp,
                 )
             }
         }
     ) { newValue: ArithmeticChain? ->
-        val moneyPerWeek = newValue / feeMultiplier / exchangeRate.rate
-        onMoneyPerWeekChange(moneyPerWeek)
+        val newMoneyPerWeek = newValue / rateUIModel.rate
+        onMoneyPerWeekChanged(newMoneyPerWeek)
     }
 }

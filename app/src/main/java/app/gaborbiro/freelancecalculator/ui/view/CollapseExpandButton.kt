@@ -14,16 +14,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.gaborbiro.freelancecalculator.persistence.domain.MapDelegate
+import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 
 @Composable
 fun CollapseExpandButton(
     modifier: Modifier,
-    id: String,
-    sectionExpander: MapDelegate<Boolean, Boolean>
+    collapseId: String,
+    sectionExpander: MapPrefsDelegate<Boolean>
 ) {
-    val expanded: Boolean? by sectionExpander[id].collectAsState(initial = true)
+    val expanded: Boolean? by sectionExpander[collapseId].collectAsState(initial = true)
     Box(
         modifier = modifier
     ) {
@@ -36,7 +36,7 @@ fun CollapseExpandButton(
             Icon(
                 modifier = iconModifier
                     .clickable {
-                        sectionExpander[id] = false
+                        sectionExpander[collapseId] = false
                     },
                 imageVector = Icons.Outlined.KeyboardArrowUp,
                 contentDescription = "collapse",
@@ -45,7 +45,7 @@ fun CollapseExpandButton(
             Icon(
                 modifier = iconModifier
                     .clickable {
-                        sectionExpander[id] = true
+                        sectionExpander[collapseId] = true
                     },
                 imageVector = Icons.Outlined.KeyboardArrowDown,
                 contentDescription = "expand",

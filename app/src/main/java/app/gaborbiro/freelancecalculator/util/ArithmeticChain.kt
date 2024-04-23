@@ -100,6 +100,10 @@ class ArithmeticChain private constructor(private val operands: List<Operand>) {
 
 fun Double?.chainify() = this?.let(::ArithmeticChain)
 
+fun ArithmeticChain?.simplify(): ArithmeticChain? {
+    return this?.simplify()
+}
+
 fun ArithmeticChain?.resolve(): BigDecimal? {
     return this?.resolve()
 }

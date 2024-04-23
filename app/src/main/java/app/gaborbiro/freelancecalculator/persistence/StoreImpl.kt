@@ -1,30 +1,31 @@
 package app.gaborbiro.freelancecalculator.persistence
 
 import android.content.Context
-import app.gaborbiro.freelancecalculator.persistence.domain.MapDelegate
+import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
+import app.gaborbiro.freelancecalculator.ui.model.ExchangeRateUIModel
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 
-open class StoreImpl(context: Context, scope: CoroutineScope) : StoreBase(context, scope), Store {
+internal open class StoreImpl(context: Context, scope: CoroutineScope) : StoreBase(context, scope),
+    Store {
 
     override var selectedIndex: Flow<Int?> by intDelegate("SELECTED_INDEX")
 
-    override var feePerHour: Flow<ArithmeticChain?> by gsonSerializedPrefsDelegate("FEE_PER_HOUR")
-
-    override var hoursPerWeek: Flow<ArithmeticChain?> by gsonSerializedPrefsDelegate("HOURS_PER_WEEK")
-
     override var daysPerWeek: Flow<Double?> by doubleDelegate("DAYS_PER_WEEK")
 
-    override var fee: Flow<Double?> by doubleDelegate("FEE")
+    override var feePerHour: Flow<ArithmeticChain?> by gsonSerializablePrefsDelegate("FEE_PER_HOUR")
 
     override var fromCurrency: Flow<String?> by stringDelegate("FROM_CURRENCY")
 
     override var toCurrency: Flow<String?> by stringDelegate("TO_CURRENCY")
 
-    override fun sectionExpander() = booleanMapDelegate("SECTION_EXPANDED")
+    override val sectionExpander = booleanMapPrefsDelegate("SECTION_EXPANDED")
 
-    override fun registry(): MapDelegate<ArithmeticChain, String> =
-        gsonSerializedMapDelegate("REGISTRY")
+    override val exchangeRates: MapPrefsDelegate<ExchangeRateUIModel> =
+        gsonSerializableMapPrefsDelegate("EXCHANGE_RATES")
+
+    override val registry: MapPrefsDelegate<ArithmeticChain> =
+        gsonSerializableMapPrefsDelegate("REGISTRY")
 }

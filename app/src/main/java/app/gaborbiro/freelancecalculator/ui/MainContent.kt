@@ -2,6 +2,7 @@
 
 package app.gaborbiro.freelancecalculator.ui
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,20 +14,21 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.DATA_ID_FEE_PER_HOUR
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.DATA_ID_HOURS_PER_WEEK
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.DATA_ID_MONEY_PER_WEEK
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_ID_BASE
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
 import app.gaborbiro.freelancecalculator.ui.view.SingleInputContainer
-import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.format
@@ -34,16 +36,18 @@ import app.gaborbiro.freelancecalculator.util.resolve
 import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 
+@SuppressLint("FlowOperatorInvokedInComposition")
 @Composable
 fun CalculatorContent(
     store: Store,
     currencyRepository: CurrencyRepository,
 ) {
-    val selectedIndex: State<Int?> = store.selectedIndex.collectAsState(initial = null)
+    val selectedIndex: Int? by store.selectedIndex.collectAsState(initial = null)
     var indexCounter = -1
 
     fun selectionUpdater(indexCounter: Int): () -> Unit = {
@@ -54,29 +58,51 @@ fun CalculatorContent(
         .fillMaxWidth()
         .padding(horizontal = PADDING_LARGE)
 
+    val feePerHour by store
+        .registry["${SECTION_ID_BASE}:${DATA_ID_FEE_PER_HOUR}"]
+        .collectAsState(initial = null)
 
-    val feePerHour: State<ArithmeticChain?> = store.feePerHour.collectAsState(initial = null)
+    val hoursPerWeek by store
+        .registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"]
+        .collectAsState(initial = null)
 
-    val hoursPerWeek: State<ArithmeticChain?> = store.hoursPerWeek.collectAsState(initial = null)
+    LaunchedEffect(Unit) {
+        store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"]
+            .drop(1)
+            .collect { newMoneyPerWeek ->
+                when (selectedIndex) {
+                    0 -> {
+                        store.registry["${SECTION_ID_BASE}:${DATA_ID_FEE_PER_HOUR}"] =
+                            (newMoneyPerWeek / hoursPerWeek)?.simplify()
+                    }
 
-    val moneyPerWeek: ArithmeticChain? by remember(feePerHour.value, hoursPerWeek.value) {
-        mutableStateOf(feePerHour.value * hoursPerWeek.value)
+                    1 -> {
+                        store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
+                            (newMoneyPerWeek / feePerHour)?.simplify()
+                    }
+                }
+            }
     }
 
     @Suppress("KotlinConstantConditions")
     SingleInputContainer(
         containerModifier = selectableContainerModifier,
         label = "Fee per hour",
-        value = feePerHour.value.resolve().format(decimalCount = 2),
+        value = feePerHour.resolve().format(decimalCount = 2),
         clearButtonVisible = true,
-        selected = selectedIndex.value == ++indexCounter,
+        selected = selectedIndex == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
-        onValueChange = { newValue: Double? ->
+        onValueChanged = { newFeePerHour: Double? ->
             CoroutineScope(Dispatchers.IO).launch {
-                if (selectedIndex.value == 1) {
-                    store.hoursPerWeek = flowOf((moneyPerWeek / newValue)?.simplify())
+                if (selectedIndex == 2) {
+                    store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"] =
+                        hoursPerWeek * newFeePerHour
+                } else if (selectedIndex == 1) {
+                    store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
+                        (feePerHour * hoursPerWeek / newFeePerHour)?.simplify()
                 }
-                store.feePerHour = flowOf(newValue.chainify())
+                store.registry["${SECTION_ID_BASE}:${DATA_ID_FEE_PER_HOUR}"] =
+                    newFeePerHour.chainify()
             }
         },
     )
@@ -84,23 +110,28 @@ fun CalculatorContent(
     SingleInputContainer(
         containerModifier = selectableContainerModifier,
         label = "Hours per week",
-        value = hoursPerWeek.value.resolve().format(decimalCount = 0),
+        value = hoursPerWeek.resolve().format(decimalCount = 0),
         clearButtonVisible = true,
-        selected = selectedIndex.value == ++indexCounter,
+        selected = selectedIndex == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
-        onValueChange = { newValue: Double? ->
+        onValueChanged = { newHoursPerWeek: Double? ->
             CoroutineScope(Dispatchers.IO).launch {
-                if (selectedIndex.value == 0) {
-                    store.feePerHour = flowOf((moneyPerWeek / newValue)?.simplify())
+                if (selectedIndex == 2) {
+                    store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"] =
+                        newHoursPerWeek * feePerHour
+                } else if (selectedIndex == 0) {
+                    store.registry["${SECTION_ID_BASE}:${DATA_ID_FEE_PER_HOUR}"] =
+                        (feePerHour * hoursPerWeek / newHoursPerWeek)?.simplify()
                 }
-                store.hoursPerWeek = flowOf(newValue.chainify())
+                store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
+                    newHoursPerWeek.chainify()
             }
         },
     )
 
     SelectableContainer(
         modifier = selectableContainerModifier,
-        selected = selectedIndex.value == ++indexCounter,
+        selected = selectedIndex == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
     ) { modifier ->
         Column(
@@ -110,17 +141,6 @@ fun CalculatorContent(
             ResultsSection(
                 store = store,
                 currencyRepository = currencyRepository,
-                onMoneyPerWeekChange = { newValue: ArithmeticChain? ->
-                    CoroutineScope(Dispatchers.IO).launch {
-                        when (selectedIndex.value) {
-                            0 -> store.feePerHour =
-                                flowOf((newValue / hoursPerWeek.value)?.simplify())
-
-                            1 -> store.hoursPerWeek =
-                                flowOf((newValue / feePerHour.value)?.simplify())
-                        }
-                    }
-                },
             )
         }
     }

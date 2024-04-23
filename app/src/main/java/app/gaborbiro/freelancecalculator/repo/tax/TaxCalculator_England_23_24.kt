@@ -24,7 +24,7 @@ private const val NIC4_BASIC_TAX = 0.09
 private const val NIC4_HIGH_BRACKET = Int.MAX_VALUE
 private const val NIC4_HIGH_TAX = 0.02
 
-class Tax_England_23_24 : TaxCalculator() {
+class TaxCalculator_England_23_24 : TaxCalculator() {
 
     override fun calculateTax(perYear: Double): TaxCalculationResult {
         return super.calculateTax(
