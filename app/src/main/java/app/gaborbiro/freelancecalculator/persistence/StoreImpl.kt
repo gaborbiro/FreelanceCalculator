@@ -15,13 +15,10 @@ internal open class StoreImpl(context: Context, scope: CoroutineScope) : StoreBa
 
     override var daysPerWeek: Flow<Double?> by doubleDelegate("DAYS_PER_WEEK")
 
-    override var feePerHour: Flow<ArithmeticChain?> by gsonSerializablePrefsDelegate("FEE_PER_HOUR")
-
-    override var fromCurrency: Flow<String?> by stringDelegate("FROM_CURRENCY")
-
-    override var toCurrency: Flow<String?> by stringDelegate("TO_CURRENCY")
-
     override val sectionExpander = booleanMapPrefsDelegate("SECTION_EXPANDED")
+
+    override val currencies: MapPrefsDelegate<Pair<String?, String?>> =
+        gsonSerializableMapPrefsDelegate("CURRENCIES")
 
     override val exchangeRates: MapPrefsDelegate<ExchangeRateUIModel> =
         gsonSerializableMapPrefsDelegate("EXCHANGE_RATES")

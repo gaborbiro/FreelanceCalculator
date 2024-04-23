@@ -29,9 +29,7 @@ import app.gaborbiro.freelancecalculator.util.resolve
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
 
@@ -81,13 +79,18 @@ fun ColumnScope.ResultsSection(
         currencyRepository = currencyRepository,
         onMoneyPerWeekChanged = { newMoneyPerWeek ->
             CoroutineScope(Dispatchers.IO).launch {
-                val feeMultiplier = store.registry["time_off:${DATA_ID_FEE}"]
-                    .lastOrNull()
-                    .resolve()
-                    ?.toDouble()
-                    ?.let { 1.0 - (it / 100.0) }
-                store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"] =
-                    newMoneyPerWeek / feeMultiplier
+                flowOf(newMoneyPerWeek)
+                    .zip(store.registry["time_off:${DATA_ID_FEE}"]) { newMoneyPerWeek, fee ->
+                        val feeMultiplier = fee
+                            .resolve()
+                            ?.toDouble()
+                            ?.let { 1.0 - (it / 100.0) }
+                        newMoneyPerWeek to feeMultiplier
+                    }
+                    .collectLatest { (newMoneyPerWeek, feeMultiplier) ->
+                        store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"] =
+                            newMoneyPerWeek / feeMultiplier
+                    }
             }
         }
     )

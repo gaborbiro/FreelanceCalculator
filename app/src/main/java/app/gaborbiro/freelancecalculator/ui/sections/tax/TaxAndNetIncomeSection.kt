@@ -31,8 +31,9 @@ fun ColumnScope.TaxAndNetIncomeSection(
     store: Store,
     onMoneyPerWeekChanged: (ArithmeticChain?) -> Unit,
 ) {
-    val fromCurrency by store.fromCurrency.collectAsState(initial = null)
-    val toCurrency by store.toCurrency.collectAsState(initial = null)
+    val selectedCurrency by store.currencies[inputId]
+        .collectAsState(initial = null)
+    val (fromCurrency, toCurrency) = selectedCurrency ?: (null to null)
 
     if (fromCurrency == null || toCurrency != "GBP") {
         return

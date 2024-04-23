@@ -27,7 +27,6 @@ import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.Lce
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.times
-import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FlowOperatorInvokedInComposition")
@@ -40,8 +39,9 @@ fun ColumnScope.CurrencySection(
     currencyRepository: CurrencyRepository,
     onMoneyPerWeekChanged: (ArithmeticChain?) -> Unit,
 ) {
-    val fromCurrency by store.fromCurrency.collectAsState(initial = null)
-    val toCurrency by store.toCurrency.collectAsState(initial = null)
+    val selectedCurrency by store.currencies[sectionId]
+        .collectAsState(initial = null)
+    val (fromCurrency, toCurrency) = selectedCurrency ?: (null to null)
 
     val moneyPerWeek by store
         .registry["${inputId}:${Store.DATA_ID_MONEY_PER_WEEK}"]
@@ -57,8 +57,8 @@ fun ColumnScope.CurrencySection(
     if (fromCurrency != null && toCurrency != null) {
         val rateResult = remember(fromCurrency, toCurrency) {
             currencyRepository.getRate(
-                fromCurrency!!,
-                toCurrency!!
+                fromCurrency,
+                toCurrency
             )
         }
             .subscribeAsState(Lce.Loading).value
@@ -85,7 +85,11 @@ fun ColumnScope.CurrencySection(
         }
     }
 
-    val outputMoneyPerWeek = moneyPerWeek * rateUIModel.rate
+    val outputMoneyPerWeek = if (fromCurrency != null && toCurrency != null) {
+        moneyPerWeek * rateUIModel.rate
+    } else {
+        null
+    }
     store.registry["${sectionId}:${Store.DATA_ID_MONEY_PER_WEEK}"] = outputMoneyPerWeek
 
     MoneyOverTime(
@@ -103,7 +107,7 @@ fun ColumnScope.CurrencySection(
                     label = "From",
                     currencyRepository = currencyRepository,
                 ) {
-                    store.fromCurrency = flowOf(it)
+                    store.currencies[sectionId] = it to toCurrency
                 }
                 CurrencySelector(
                     modifier = Modifier
@@ -113,7 +117,7 @@ fun ColumnScope.CurrencySection(
                     label = "To",
                     currencyRepository = currencyRepository
                 ) {
-                    store.toCurrency = flowOf(it)
+                    store.currencies[sectionId] = fromCurrency to it
                 }
                 Text(
                     modifier = Modifier
