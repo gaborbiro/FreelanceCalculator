@@ -41,6 +41,7 @@ interface Store {
         const val DATA_ID_FEE_PER_HOUR = "feePerHour"
         const val DATA_ID_HOURS_PER_WEEK = "hoursPerWeek"
         const val DATA_ID_MONEY_PER_WEEK = "moneyPerWeek"
+        const val DATA_ID_TAX = "tax"
         const val DATA_ID_FEE = "fee"
     }
 }

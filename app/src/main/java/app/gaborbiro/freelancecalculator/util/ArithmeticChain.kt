@@ -46,9 +46,7 @@ class ArithmeticChain private constructor(private val operands: List<Operand>) {
         return if (index >= 0) {
             ArithmeticChain(
                 operands = operands.minusElement(inverse)
-            ).also {
-                println("Simplifying $this ===> $it")
-            }
+            )
         } else {
             ArithmeticChain(
                 operands = operands + operand
@@ -98,7 +96,7 @@ class ArithmeticChain private constructor(private val operands: List<Operand>) {
     }
 }
 
-fun Double?.chainify() = this?.let(::ArithmeticChain)
+fun Double.chainify() = this.let(::ArithmeticChain)
 
 fun ArithmeticChain?.simplify(): ArithmeticChain? {
     return this?.simplify()

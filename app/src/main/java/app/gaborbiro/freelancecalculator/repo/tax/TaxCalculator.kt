@@ -12,7 +12,7 @@ abstract class TaxCalculator {
 
     abstract fun calculateNIC4(perYear: Double): TaxCalculationResult
 
-    abstract fun calculateIncomeFromBrut(brut: Double): Double
+    abstract fun calculateIncomeFromGross(brut: Double): Double
 
     /**
      * @param brackets Pairs of bracket and the percent of tax paid within (under) that bracket.

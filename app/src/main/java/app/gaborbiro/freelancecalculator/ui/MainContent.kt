@@ -36,6 +36,7 @@ import app.gaborbiro.freelancecalculator.util.resolve
 import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -98,11 +99,14 @@ fun CalculatorContent(
                     store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"] =
                         hoursPerWeek * newFeePerHour
                 } else if (selectedIndex == 1) {
-                    store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
-                        (feePerHour * hoursPerWeek / newFeePerHour)?.simplify()
+                    store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"]
+                        .collectLatest { moneyPerWeek ->
+                            store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
+                                (moneyPerWeek / newFeePerHour)?.simplify()
+                        }
                 }
                 store.registry["${SECTION_ID_BASE}:${DATA_ID_FEE_PER_HOUR}"] =
-                    newFeePerHour.chainify()
+                    newFeePerHour?.chainify()
             }
         },
     )
@@ -120,11 +124,14 @@ fun CalculatorContent(
                     store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"] =
                         newHoursPerWeek * feePerHour
                 } else if (selectedIndex == 0) {
-                    store.registry["${SECTION_ID_BASE}:${DATA_ID_FEE_PER_HOUR}"] =
-                        (feePerHour * hoursPerWeek / newHoursPerWeek)?.simplify()
+                    store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"]
+                        .collectLatest { moneyPerWeek ->
+                            store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
+                                (moneyPerWeek / newHoursPerWeek)?.simplify()
+                        }
                 }
                 store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
-                    newHoursPerWeek.chainify()
+                    newHoursPerWeek?.chainify()
             }
         },
     )

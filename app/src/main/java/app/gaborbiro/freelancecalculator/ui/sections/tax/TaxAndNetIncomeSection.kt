@@ -17,6 +17,7 @@ import app.gaborbiro.freelancecalculator.repo.tax.TaxCalculator
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.MoneyOverTime
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
+import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
 import app.gaborbiro.freelancecalculator.util.hide.format
@@ -63,7 +64,8 @@ fun ColumnScope.TaxAndNetIncomeSection(
                     nic2Tax = nic2Tax.totalTax.format(decimalCount = 2),
                     nic4Tax = "${nic4Tax.totalTax.format(decimalCount = 2)} (allowance: ${nic4Tax.breakdown[0].bracket.amount.format()})",
                     totalTax = totalTax.format(decimalCount = 2),
-                    afterTaxPerWeek = afterTaxPerWeek!!
+                    afterTaxPerWeek = afterTaxPerWeek!!,
+                    total = totalTax,
                 )
             } else {
                 null
@@ -72,6 +74,8 @@ fun ColumnScope.TaxAndNetIncomeSection(
     }
 
     store.registry["${sectionId}:${Store.DATA_ID_MONEY_PER_WEEK}"] = taxInfo?.afterTaxPerWeek
+    store.registry["${sectionId}:${Store.DATA_ID_TAX}"] =
+        if ((taxInfo?.total ?: 0.0) > 0) taxInfo?.total?.chainify() else null
 
     taxInfo?.let {
         MoneyOverTime(
@@ -88,7 +92,7 @@ fun ColumnScope.TaxAndNetIncomeSection(
         ) { newValue: ArithmeticChain? ->
             val perYear = newValue * WEEKS_PER_YEAR
             val newMoneyPerWeek = perYear?.resolve()?.let {
-                taxCalculator.calculateIncomeFromBrut(it.toDouble())
+                taxCalculator.calculateIncomeFromGross(it.toDouble())
             } / WEEKS_PER_YEAR
             onMoneyPerWeekChanged(newMoneyPerWeek)
         }

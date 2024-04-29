@@ -37,9 +37,7 @@ fun ColumnScope.FeeSection(
     val fee by store
         .registry["${sectionId}:${DATA_ID_FEE}"]
         .collectAsState(initial = null)
-    val feeMultiplier = remember(fee) {
-        fee?.resolve()?.toDouble()?.let { 1.0 - (it / 100.0) }
-    }
+    val feeMultiplier = remember(fee) { fee.toFeeMultiplier() }
     val outputMoneyPerWeek = moneyPerWeek * feeMultiplier
     store.registry["${sectionId}:${DATA_ID_MONEY_PER_WEEK}"] = outputMoneyPerWeek
 
@@ -57,7 +55,7 @@ fun ColumnScope.FeeSection(
                 outlined = false,
                 clearButtonVisible = true,
                 onValueChange = { fee: Double? ->
-                    store.registry["${sectionId}:${DATA_ID_FEE}"] = fee.chainify()
+                    store.registry["${sectionId}:${DATA_ID_FEE}"] = fee?.chainify()
                 },
             )
         }
@@ -66,3 +64,8 @@ fun ColumnScope.FeeSection(
         onMoneyPerWeekChanged(newMoneyPerWeek)
     }
 }
+
+fun ArithmeticChain?.toFeeMultiplier() = resolve()
+    ?.toDouble()
+    ?.let { 1.0 - (it / 100.0) }
+    ?: 1.0

@@ -87,7 +87,7 @@ fun ColumnScope.MoneyOverTime(
                 value = moneyPerWeek?.resolve().format(decimalCount = 0),
                 outlined = true,
             ) { newValue ->
-                onMoneyPerWeekChange(newValue.chainify())
+                onMoneyPerWeekChange(newValue?.chainify())
             }
         }
 
@@ -103,7 +103,7 @@ fun ColumnScope.MoneyOverTime(
                 value = (moneyPerWeek / daysPerWeek)?.resolve().format(decimalCount = 2),
                 outlined = true,
             ) { newValue ->
-                onMoneyPerWeekChange(newValue.chainify() * daysPerWeek)
+                onMoneyPerWeekChange(newValue?.chainify() * daysPerWeek)
             }
         }
 

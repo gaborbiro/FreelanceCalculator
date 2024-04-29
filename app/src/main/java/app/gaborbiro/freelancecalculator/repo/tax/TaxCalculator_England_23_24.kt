@@ -62,7 +62,7 @@ class TaxCalculator_England_23_24 : TaxCalculator() {
         )
     }
 
-    override fun calculateIncomeFromBrut(brut: Double): Double {
+    override fun calculateIncomeFromGross(brut: Double): Double {
         return when {
             brut <= PERSONAL_ALLOWANCE -> brut
             brut <= PERSONAL_ALLOWANCE + INCOME_BASIC_BRACKET -> 1.40845 * brut - 4881.55

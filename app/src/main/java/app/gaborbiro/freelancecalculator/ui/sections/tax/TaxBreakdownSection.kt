@@ -120,6 +120,7 @@ class TaxBreakdownUIModel(
     val nic4Tax: String,
     val totalTax: String,
     val afterTaxPerWeek: ArithmeticChain,
+    val total: Double,
 ) {
     companion object {
         fun dummyData() = TaxBreakdownUIModel(
@@ -127,7 +128,8 @@ class TaxBreakdownUIModel(
             nic2Tax = "179.40",
             nic4Tax = "4,332.53 (allowance: 12,570)",
             totalTax = "30,570.48",
-            afterTaxPerWeek = 1273.0.chainify()!!,
+            afterTaxPerWeek = 1273.0.chainify(),
+            total = 1223.0,
         )
     }
 }

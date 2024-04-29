@@ -48,11 +48,7 @@ fun ColumnScope.CurrencySection(
         .collectAsState(initial = null)
 
     val savedRate by store.exchangeRates[sectionId].collectAsState(initial = null)
-    var rateUIModel: ExchangeRateUIModel by remember(savedRate) {
-        mutableStateOf(
-            savedRate ?: ExchangeRateUIModel(rate = null, since = "")
-        )
-    }
+    var rateUIModel = savedRate ?: ExchangeRateUIModel(rate = null, since = "")
 
     if (fromCurrency != null && toCurrency != null) {
         val rateResult = remember(fromCurrency, toCurrency) {
@@ -63,6 +59,7 @@ fun ColumnScope.CurrencySection(
         }
             .subscribeAsState(Lce.Loading).value
 
+        println(rateResult)
         when (rateResult) {
             is Lce.Loading -> {
                 rateUIModel = rateUIModel.copy(since = "Loading...")
