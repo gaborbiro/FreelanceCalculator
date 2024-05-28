@@ -37,11 +37,16 @@ interface Store {
                 MapPrefsDelegate.dummyImplementation()
         }
 
-        const val SECTION_ID_BASE = "base"
-        const val DATA_ID_FEE_PER_HOUR = "feePerHour"
-        const val DATA_ID_HOURS_PER_WEEK = "hoursPerWeek"
-        const val DATA_ID_MONEY_PER_WEEK = "moneyPerWeek"
-        const val DATA_ID_TAX = "tax"
-        const val DATA_ID_FEE = "fee"
+        const val SECTION_BASE = "base"
+        const val SECTION_PT = "pt"
+        const val SECTION_UK = "uk"
+        const val SECTION_TIMEOFF = "time_off"
+        const val SECTION_CURRENCY1 = "currency1"
+        const val SUB_SECTION_TAX = "tax"
+        const val SUB_SECTION_CURRENCY = "currency"
+        const val FEE_PER_HOUR = "feePerHour"
+        const val HOURS_PER_WEEK = "hoursPerWeek"
+        const val MONEY_PER_WEEK = "moneyPerWeek"
+        const val TYPE_FEE = "fee"
     }
 }

@@ -1,6 +1,5 @@
 package app.gaborbiro.freelancecalculator.ui.sections.currency
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -15,10 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rxjava2.subscribeAsState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.MONEY_PER_WEEK
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.model.ExchangeRateUIModel
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
@@ -44,13 +43,23 @@ fun ColumnScope.CurrencySection(
     val (fromCurrency, toCurrency) = selectedCurrency ?: (null to null)
 
     val moneyPerWeek by store
-        .registry["${inputId}:${Store.DATA_ID_MONEY_PER_WEEK}"]
+        .registry["${inputId}:$MONEY_PER_WEEK"]
         .collectAsState(initial = null)
 
-    val savedRate by store.exchangeRates[sectionId].collectAsState(initial = null)
-    var rateUIModel = savedRate ?: ExchangeRateUIModel(rate = null, since = "")
+    var rateUIModel: ExchangeRateUIModel by remember {
+        mutableStateOf(
+            ExchangeRateUIModel(
+                rate = null,
+                since = "",
+                error = false,
+            )
+        )
+    }
 
     if (fromCurrency != null && toCurrency != null) {
+        rateUIModel = store.exchangeRates[sectionId].collectAsState(initial = null).value
+            ?: rateUIModel
+
         val rateResult = remember(fromCurrency, toCurrency) {
             currencyRepository.getRate(
                 fromCurrency,
@@ -59,25 +68,36 @@ fun ColumnScope.CurrencySection(
         }
             .subscribeAsState(Lce.Loading).value
 
-        println(rateResult)
-        when (rateResult) {
-            is Lce.Loading -> {
-                rateUIModel = rateUIModel.copy(since = "Loading...")
-            }
+        remember(rateResult) {
+            when (rateResult) {
+                is Lce.Loading -> {
+                    rateUIModel = rateUIModel.copy(
+                        since = "Loading...",
+                        error = false,
+                    )
+                }
 
-            is Lce.Data -> {
-                store.exchangeRates[sectionId] = rateUIModel.copy(
-                    rate = rateResult.data.rate,
-                    since = "Refreshed at:\n${rateResult.data.since}"
-                )
-            }
+                is Lce.Data -> {
+                    rateUIModel = rateUIModel.copy(
+                        rate = rateResult.data.rate,
+                        since = "Refreshed at:\n${rateResult.data.since}",
+                        error = false,
+                    )
+                    store.exchangeRates[sectionId] = rateUIModel
+                }
 
-            is Lce.Error -> {
-                Toast.makeText(
-                    LocalContext.current,
-                    rateResult.throwable.message,
-                    Toast.LENGTH_SHORT
-                ).show()
+                is Lce.Error -> {
+                    if (rateUIModel.rate == null) {
+                        rateUIModel = rateUIModel.copy(
+                            error = true
+                        )
+                    }
+//                    Toast.makeText(
+//                        LocalContext.current,
+//                        rateResult.throwable.message,
+//                        Toast.LENGTH_SHORT
+//                    ).show()
+                }
             }
         }
     }
@@ -87,11 +107,11 @@ fun ColumnScope.CurrencySection(
     } else {
         null
     }
-    store.registry["${sectionId}:${Store.DATA_ID_MONEY_PER_WEEK}"] = outputMoneyPerWeek
+    store.registry["${sectionId}:$MONEY_PER_WEEK"] = outputMoneyPerWeek
 
     MoneyOverTime(
-        collapseId = "${sectionId}:currency",
-        title = title,
+        collapseId = "${sectionId}/currency",
+        title = "$title ($inputId->$sectionId)",
         store = store,
         moneyPerWeek = outputMoneyPerWeek,
         extraContent = {
@@ -116,10 +136,11 @@ fun ColumnScope.CurrencySection(
                 ) {
                     store.currencies[sectionId] = fromCurrency to it
                 }
+                val sinceStr = rateUIModel.since + if (rateUIModel.error) "(error)" else ""
                 Text(
                     modifier = Modifier
                         .padding(top = PADDING_LARGE),
-                    text = rateUIModel.since,
+                    text = sinceStr,
                     fontSize = 10.sp,
                     lineHeight = 12.sp,
                 )

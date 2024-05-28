@@ -20,10 +20,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.DATA_ID_FEE_PER_HOUR
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.DATA_ID_HOURS_PER_WEEK
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.DATA_ID_MONEY_PER_WEEK
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_ID_BASE
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.FEE_PER_HOUR
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.HOURS_PER_WEEK
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.MONEY_PER_WEEK
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_BASE
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
@@ -60,25 +60,25 @@ fun CalculatorContent(
         .padding(horizontal = PADDING_LARGE)
 
     val feePerHour by store
-        .registry["${SECTION_ID_BASE}:${DATA_ID_FEE_PER_HOUR}"]
+        .registry["${SECTION_BASE}:${FEE_PER_HOUR}"]
         .collectAsState(initial = null)
 
     val hoursPerWeek by store
-        .registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"]
+        .registry["${SECTION_BASE}:${HOURS_PER_WEEK}"]
         .collectAsState(initial = null)
 
     LaunchedEffect(Unit) {
-        store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"]
+        store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"]
             .drop(1)
             .collect { newMoneyPerWeek ->
                 when (selectedIndex) {
                     0 -> {
-                        store.registry["${SECTION_ID_BASE}:${DATA_ID_FEE_PER_HOUR}"] =
+                        store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"] =
                             (newMoneyPerWeek / hoursPerWeek)?.simplify()
                     }
 
                     1 -> {
-                        store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
+                        store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] =
                             (newMoneyPerWeek / feePerHour)?.simplify()
                     }
                 }
@@ -96,16 +96,16 @@ fun CalculatorContent(
         onValueChanged = { newFeePerHour: Double? ->
             CoroutineScope(Dispatchers.IO).launch {
                 if (selectedIndex == 2) {
-                    store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"] =
+                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
                         hoursPerWeek * newFeePerHour
                 } else if (selectedIndex == 1) {
-                    store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"]
+                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"]
                         .collectLatest { moneyPerWeek ->
-                            store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
+                            store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] =
                                 (moneyPerWeek / newFeePerHour)?.simplify()
                         }
                 }
-                store.registry["${SECTION_ID_BASE}:${DATA_ID_FEE_PER_HOUR}"] =
+                store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"] =
                     newFeePerHour?.chainify()
             }
         },
@@ -121,16 +121,16 @@ fun CalculatorContent(
         onValueChanged = { newHoursPerWeek: Double? ->
             CoroutineScope(Dispatchers.IO).launch {
                 if (selectedIndex == 2) {
-                    store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"] =
+                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
                         newHoursPerWeek * feePerHour
                 } else if (selectedIndex == 0) {
-                    store.registry["${SECTION_ID_BASE}:${DATA_ID_MONEY_PER_WEEK}"]
+                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"]
                         .collectLatest { moneyPerWeek ->
-                            store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
+                            store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] =
                                 (moneyPerWeek / newHoursPerWeek)?.simplify()
                         }
                 }
-                store.registry["${SECTION_ID_BASE}:${DATA_ID_HOURS_PER_WEEK}"] =
+                store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] =
                     newHoursPerWeek?.chainify()
             }
         },

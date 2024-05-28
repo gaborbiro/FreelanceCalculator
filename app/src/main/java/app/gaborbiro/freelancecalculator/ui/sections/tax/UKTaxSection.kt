@@ -13,7 +13,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.MONEY_PER_WEEK
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_CURRENCY
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_TAX
+import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.repo.tax.TaxCalculator
+import app.gaborbiro.freelancecalculator.ui.sections.currency.CurrencySection
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.MoneyOverTime
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
@@ -26,11 +31,13 @@ import app.gaborbiro.freelancecalculator.util.times
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FlowOperatorInvokedInComposition")
 @Composable
-fun ColumnScope.TaxAndNetIncomeSection(
+fun ColumnScope.UKTaxSection(
     inputId: String,
     sectionId: String,
     store: Store,
-    onMoneyPerWeekChanged: (ArithmeticChain?) -> Unit,
+    currencyRepository: CurrencyRepository,
+    onMoneyPerWeekChangedTax: (ArithmeticChain?) -> Unit,
+    onMoneyPerWeekChangedCurrency: (ArithmeticChain?) -> Unit,
 ) {
     val selectedCurrency by store.currencies[inputId]
         .collectAsState(initial = null)
@@ -41,7 +48,7 @@ fun ColumnScope.TaxAndNetIncomeSection(
     }
 
     val moneyPerWeek by store
-        .registry["${inputId}:${Store.DATA_ID_MONEY_PER_WEEK}"]
+        .registry["${inputId}:${Store.MONEY_PER_WEEK}"]
         .collectAsState(initial = null)
 
     val taxCalculator: TaxCalculator = remember { TaxCalculator_England_23_24() }
@@ -73,14 +80,16 @@ fun ColumnScope.TaxAndNetIncomeSection(
         }
     }
 
-    store.registry["${sectionId}:${Store.DATA_ID_MONEY_PER_WEEK}"] = taxInfo?.afterTaxPerWeek
-    store.registry["${sectionId}:${Store.DATA_ID_TAX}"] =
-        if ((taxInfo?.total ?: 0.0) > 0) taxInfo?.total?.chainify() else null
+    store.registry["$sectionId/$SUB_SECTION_TAX:$MONEY_PER_WEEK"] = taxInfo?.afterTaxPerWeek
+    store.registry["$sectionId/$SUB_SECTION_TAX"] = taxInfo?.total
+        ?.let { total ->
+            if (total > 0) total.chainify() else null
+        }
 
     taxInfo?.let {
         MoneyOverTime(
             collapseId = "tax_net",
-            title = "Tax (UK 23/24)",
+            title = "Tax (UK 23/24, $inputId->$sectionId)",
             store = store,
             moneyPerWeek = taxInfo.afterTaxPerWeek,
             extraContent = {
@@ -94,9 +103,18 @@ fun ColumnScope.TaxAndNetIncomeSection(
             val newMoneyPerWeek = perYear?.resolve()?.let {
                 taxCalculator.calculateIncomeFromGross(it.toDouble())
             } / WEEKS_PER_YEAR
-            onMoneyPerWeekChanged(newMoneyPerWeek)
+            onMoneyPerWeekChangedTax(newMoneyPerWeek)
         }
     }
+
+    CurrencySection(
+        inputId = "$sectionId/$SUB_SECTION_TAX",
+        sectionId = "$sectionId/$SUB_SECTION_CURRENCY",
+        title = "Currency",
+        store = store,
+        currencyRepository = currencyRepository,
+        onMoneyPerWeekChanged = onMoneyPerWeekChangedCurrency,
+    )
 }
 
 @Preview
@@ -107,11 +125,13 @@ private fun TaxBreakdownSectionPreview() {
             .fillMaxWidth()
             .padding(bottom = PADDING_LARGE)
     ) {
-        TaxAndNetIncomeSection(
+        UKTaxSection(
             inputId = "",
             sectionId = "",
             store = Store.dummyImplementation(),
-            onMoneyPerWeekChanged = {},
+            currencyRepository = CurrencyRepository.dummyImplementation(),
+            onMoneyPerWeekChangedTax = {},
+            onMoneyPerWeekChangedCurrency = {},
         )
     }
 }

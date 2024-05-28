@@ -69,7 +69,7 @@ class ArithmeticChain private constructor(private val operands: List<Operand>) {
     }
 
     fun simplify(): ArithmeticChain {
-        return resolve().toDouble().chainify()!!
+        return resolve().toDouble().chainify()
     }
 
     override fun toString(): String {
