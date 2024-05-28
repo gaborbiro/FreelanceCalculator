@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,7 +69,7 @@ fun ColumnScope.CurrencySection(
         }
             .subscribeAsState(Lce.Loading).value
 
-        remember(rateResult) {
+        LaunchedEffect(rateResult) {
             when (rateResult) {
                 is Lce.Loading -> {
                     rateUIModel = rateUIModel.copy(

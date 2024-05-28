@@ -19,7 +19,6 @@ import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECT
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_PT
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_TIMEOFF
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_UK
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_CURRENCY
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_TAX
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
