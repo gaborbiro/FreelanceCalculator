@@ -74,12 +74,13 @@ fun ColumnScope.UKTaxSection(
 
     taxInfo?.let {
         MoneyOverTime(
-            collapseId = "tax_net",
+            collapseId = "$sectionId/net:collapse",
             title = "Tax (UK 23/24, $inputId->$sectionId)",
             store = store,
             moneyPerWeek = taxInfo.afterTaxPerWeek,
             extraContent = {
                 TaxBreakdownSection(
+                    collapseId = "$sectionId/tax:collapse",
                     taxModel = taxInfo,
                     sectionExpander = store.sectionExpander,
                 )

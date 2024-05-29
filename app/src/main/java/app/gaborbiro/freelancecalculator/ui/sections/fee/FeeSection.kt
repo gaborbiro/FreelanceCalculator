@@ -33,15 +33,19 @@ fun ColumnScope.FeeSection(
     val moneyPerWeek by store
         .registry["$inputId:$MONEY_PER_WEEK"]
         .collectAsState(initial = null)
+
     val fee by store
         .registry["$sectionId:$TYPE_FEE"]
         .collectAsState(initial = null)
+
     val feeMultiplier = remember(fee) { fee.toFeeMultiplier() }
+
     val outputMoneyPerWeek = moneyPerWeek * feeMultiplier
+
     store.registry["$sectionId:$MONEY_PER_WEEK"] = outputMoneyPerWeek
 
     MoneyOverTime(
-        collapseId = "$sectionId:$TYPE_FEE",
+        collapseId = "$sectionId:collapse",
         title = "$title ($inputId->$sectionId)",
         store = store,
         moneyPerWeek = outputMoneyPerWeek,

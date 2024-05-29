@@ -31,7 +31,6 @@ import app.gaborbiro.freelancecalculator.ui.sections.fee.toFeeMultiplier
 import app.gaborbiro.freelancecalculator.ui.sections.tax.UKTaxSection
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.MoneyOverTime
-import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
@@ -44,6 +43,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ColumnScope.ResultsSection(
     store: Store,
@@ -60,13 +60,13 @@ fun ColumnScope.ResultsSection(
         .registry["${SECTION_BASE}:${MONEY_PER_WEEK}"]
         .collectAsState(initial = null)
 
-    MoneyOverTimeSection(
-        moneyPerWeek = baseMoneyPerWeek.value,
-        sectionId = "base_display",
-        title = "Base",
+    MoneyOverTime(
+        collapseId = "$SECTION_BASE:collapse",
+        title = "Base (->$SECTION_BASE)",
         store = store,
+        moneyPerWeek = baseMoneyPerWeek.value,
         onMoneyPerWeekChange = { newMoneyPerWeek ->
-            store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
+            store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
                 newMoneyPerWeek
         },
     )
@@ -77,7 +77,7 @@ fun ColumnScope.ResultsSection(
         title = "Time off",
         store = store,
         onMoneyPerWeekChanged = {
-            store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] = it
+            store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] = it
         }
     )
 
@@ -94,7 +94,7 @@ fun ColumnScope.ResultsSection(
                     store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
                 )
                     .collectLatest { (newMoneyPerWeek, timeOff) ->
-                        store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
+                        store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
                             newMoneyPerWeek / timeOff
                     }
             }
@@ -118,7 +118,7 @@ fun ColumnScope.ResultsSection(
                         store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
                         store.exchangeRates[SECTION_CURRENCY1],
                     ).collectLatest { (newMoneyPerWeek, timeOff, currency1) ->
-                        store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
+                        store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
                             newMoneyPerWeek / timeOff?.toFeeMultiplier() / currency1?.rate
                     }
                 }
@@ -156,10 +156,10 @@ fun ColumnScope.ResultsSection(
                 CoroutineScope(Dispatchers.IO).launch {
                     zip(
                         flowOf(newMoneyPerWeek),
-                        store.registry["$SECTION_TIMEOFF:${TYPE_FEE}"],
+                        store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
                         store.exchangeRates[SECTION_CURRENCY1],
                     ).collectLatest { (newMoneyPerWeek, timeOff, currency1) ->
-                        store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
+                        store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
                             newMoneyPerWeek / timeOff?.toFeeMultiplier() / currency1?.rate
                     }
                 }
@@ -194,25 +194,6 @@ fun ColumnScope.ResultsSection(
         )
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ColumnScope.MoneyOverTimeSection(
-    moneyPerWeek: ArithmeticChain?,
-    sectionId: String,
-    title: String,
-    store: Store,
-    onMoneyPerWeekChange: (value: ArithmeticChain?) -> Unit,
-) {
-    MoneyOverTime(
-        collapseId = "${sectionId}:moneyovertime/",
-        title = "$title (->$sectionId)",
-        store = store,
-        moneyPerWeek = moneyPerWeek,
-        onMoneyPerWeekChange = onMoneyPerWeekChange
-    )
-}
-
 
 @ExperimentalLayoutApi
 @ExperimentalMaterial3Api

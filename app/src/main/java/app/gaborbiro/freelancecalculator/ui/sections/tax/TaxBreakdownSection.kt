@@ -29,11 +29,10 @@ import app.gaborbiro.freelancecalculator.util.chainify
 
 @Composable
 fun TaxBreakdownSection(
+    collapseId: String,
     taxModel: TaxBreakdownUIModel,
     sectionExpander: MapPrefsDelegate<Boolean>,
 ) {
-    val collapseId = "tax_breakdown"
-
     Row {
         Column(
             modifier = Modifier
@@ -143,6 +142,7 @@ private fun TaxBreakdownSectionPreview() {
             .padding(bottom = PADDING_LARGE)
     ) {
         TaxBreakdownSection(
+            collapseId = "",
             taxModel = TaxBreakdownUIModel.dummyData(),
             sectionExpander = MapPrefsDelegate.dummyImplementation()
         )

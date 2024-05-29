@@ -111,7 +111,7 @@ fun ColumnScope.CurrencySection(
     store.registry["${sectionId}:$MONEY_PER_WEEK"] = outputMoneyPerWeek
 
     MoneyOverTime(
-        collapseId = "${sectionId}/currency",
+        collapseId = "${sectionId}:collapse",
         title = "$title ($inputId->$sectionId)",
         store = store,
         moneyPerWeek = outputMoneyPerWeek,
