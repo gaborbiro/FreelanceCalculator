@@ -14,6 +14,13 @@ import kotlinx.coroutines.flow.zip
 //    }
 //}
 
+fun <T1, T2> zip(
+    first: Flow<T1>,
+    second: Flow<T2>,
+): Flow<Pair<T1, T2>> =
+    first
+        .zip(second) { a, b -> Pair(a, b) }
+
 fun <T1, T2, T3> zip(
     first: Flow<T1>,
     second: Flow<T2>,

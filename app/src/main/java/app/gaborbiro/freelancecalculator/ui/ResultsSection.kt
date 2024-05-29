@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -19,6 +20,7 @@ import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECT
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_PT
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_TIMEOFF
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_UK
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_CURRENCY
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_TAX
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
@@ -26,7 +28,6 @@ import app.gaborbiro.freelancecalculator.ui.sections.currency.CurrencySection
 import app.gaborbiro.freelancecalculator.ui.sections.daysperweek.DaysPerWeekSection
 import app.gaborbiro.freelancecalculator.ui.sections.fee.FeeSection
 import app.gaborbiro.freelancecalculator.ui.sections.fee.toFeeMultiplier
-import app.gaborbiro.freelancecalculator.ui.sections.tax.PTTaxSection
 import app.gaborbiro.freelancecalculator.ui.sections.tax.UKTaxSection
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.MoneyOverTime
@@ -40,7 +41,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
 
 
@@ -74,7 +74,7 @@ fun ColumnScope.ResultsSection(
     FeeSection(
         inputId = SECTION_BASE,
         sectionId = SECTION_TIMEOFF,
-        title = "Fee / Reduction",
+        title = "Time off",
         store = store,
         onMoneyPerWeekChanged = {
             store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] = it
@@ -89,10 +89,10 @@ fun ColumnScope.ResultsSection(
         currencyRepository = currencyRepository,
         onMoneyPerWeekChanged = { newMoneyPerWeek ->
             CoroutineScope(Dispatchers.IO).launch {
-                flowOf(newMoneyPerWeek)
-                    .zip(store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]) { newMoneyPerWeek, timeOff ->
-                        newMoneyPerWeek to timeOff.toFeeMultiplier()
-                    }
+                zip(
+                    flowOf(newMoneyPerWeek),
+                    store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
+                )
                     .collectLatest { (newMoneyPerWeek, timeOff) ->
                         store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
                             newMoneyPerWeek / timeOff
@@ -101,75 +101,98 @@ fun ColumnScope.ResultsSection(
         }
     )
 
-    PTTaxSection(
-        inputId = SECTION_CURRENCY1,
-        sectionId = SECTION_PT,
-        store = store,
-        currencyRepository = currencyRepository,
-        onMoneyPerWeekChangedTax = { newMoneyPerWeek ->
-            CoroutineScope(Dispatchers.IO).launch {
-                zip(
-                    flowOf(newMoneyPerWeek),
-                    store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
-                    store.exchangeRates[SECTION_CURRENCY1],
-                ).collectLatest { (newMoneyPerWeek, timeOff, currency1) ->
-                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
-                        newMoneyPerWeek / timeOff?.toFeeMultiplier() / currency1?.rate
-                }
-            }
-        },
-        onMoneyPerWeekChangedCurrency = { newMoneyPerWeek ->
-            CoroutineScope(Dispatchers.IO).launch {
-                zip(
-                    flowOf(newMoneyPerWeek),
-                    store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
-                    store.exchangeRates[SECTION_CURRENCY1],
-                    store.registry["$SECTION_PT/$SUB_SECTION_TAX:$TYPE_FEE"],
-                ).collectLatest { (newMoneyPerWeek, timeOff, currency1, ptTaxRate) ->
-                    store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
-                        newMoneyPerWeek / ptTaxRate?.toFeeMultiplier() / currency1?.rate / timeOff?.toFeeMultiplier()
-                }
-            }
-        }
-    )
+    val selectedCurrency by store.currencies[SECTION_CURRENCY1]
+        .collectAsState(initial = null)
+    val (fromCurrency, toCurrency) = selectedCurrency ?: (null to null)
 
-    UKTaxSection(
-        inputId = SECTION_CURRENCY1,
-        sectionId = SECTION_UK,
-        store = store,
-        currencyRepository = currencyRepository,
-        onMoneyPerWeekChangedTax = { newMoneyPerWeek ->
-            CoroutineScope(Dispatchers.IO).launch {
-                zip(
-                    flowOf(newMoneyPerWeek),
-                    store.registry["$SECTION_TIMEOFF:${TYPE_FEE}"],
-                    store.exchangeRates[SECTION_CURRENCY1],
-                ).collectLatest { (newMoneyPerWeek, timeOff, currency1) ->
-                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
-                        newMoneyPerWeek / timeOff?.toFeeMultiplier() / currency1?.rate
+    if (fromCurrency != null && toCurrency == "EUR") {
+        FeeSection(
+            inputId = SECTION_CURRENCY1,
+            sectionId = "$SECTION_PT/$SUB_SECTION_TAX",
+            title = "PT Tax",
+            store = store,
+            onMoneyPerWeekChanged = { newMoneyPerWeek ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    zip(
+                        flowOf(newMoneyPerWeek),
+                        store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
+                        store.exchangeRates[SECTION_CURRENCY1],
+                    ).collectLatest { (newMoneyPerWeek, timeOff, currency1) ->
+                        store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
+                            newMoneyPerWeek / timeOff?.toFeeMultiplier() / currency1?.rate
+                    }
                 }
-            }
-        },
-        onMoneyPerWeekChangedCurrency = { newMoneyPerWeek ->
-            CoroutineScope(Dispatchers.IO).launch {
-                zip(
-                    flowOf(newMoneyPerWeek * WEEKS_PER_YEAR),
-                    store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
-                    store.exchangeRates[SECTION_CURRENCY1],
-                    store.registry["$SECTION_UK/$SUB_SECTION_TAX"],
-                ).collectLatest { (newMoneyPerYear, timeOff, currency1, ukTax) ->
-                    val taxD = ukTax?.resolve()?.toDouble() ?: 0.0
-                    val gross = (newMoneyPerYear?.resolve()?.toDouble() ?: 0.0) + taxD
-                    store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
-                        if (gross > 0) {
-                            gross.chainify() / WEEKS_PER_YEAR / timeOff?.toFeeMultiplier() / currency1?.rate
-                        } else {
-                            null
-                        }
+            },
+        )
+
+        CurrencySection(
+            inputId = "$SECTION_PT/$SUB_SECTION_TAX",
+            sectionId = "$SECTION_PT/$SUB_SECTION_CURRENCY",
+            title = "Currency",
+            store = store,
+            currencyRepository = currencyRepository,
+            onMoneyPerWeekChanged = { newMoneyPerWeek ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    zip(
+                        flowOf(newMoneyPerWeek),
+                        store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
+                        store.exchangeRates[SECTION_CURRENCY1],
+                        store.registry["$SECTION_PT/$SUB_SECTION_TAX:$TYPE_FEE"],
+                    ).collectLatest { (newMoneyPerWeek, timeOff, currency1, ptTaxRate) ->
+                        store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
+                            newMoneyPerWeek / ptTaxRate?.toFeeMultiplier() / currency1?.rate / timeOff?.toFeeMultiplier()
+                    }
                 }
-            }
-        }
-    )
+            },
+        )
+    }
+
+    if (fromCurrency != null && toCurrency == "GBP") {
+        UKTaxSection(
+            inputId = SECTION_CURRENCY1,
+            sectionId = "$SECTION_UK/$SUB_SECTION_TAX",
+            store = store,
+            onMoneyPerWeekChanged = { newMoneyPerWeek ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    zip(
+                        flowOf(newMoneyPerWeek),
+                        store.registry["$SECTION_TIMEOFF:${TYPE_FEE}"],
+                        store.exchangeRates[SECTION_CURRENCY1],
+                    ).collectLatest { (newMoneyPerWeek, timeOff, currency1) ->
+                        store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
+                            newMoneyPerWeek / timeOff?.toFeeMultiplier() / currency1?.rate
+                    }
+                }
+            },
+        )
+
+        CurrencySection(
+            inputId = "$SECTION_UK/$SUB_SECTION_TAX",
+            sectionId = "$SECTION_UK/$SUB_SECTION_CURRENCY",
+            title = "Currency",
+            store = store,
+            currencyRepository = currencyRepository,
+            onMoneyPerWeekChanged = { newMoneyPerWeek ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    zip(
+                        flowOf(newMoneyPerWeek * WEEKS_PER_YEAR),
+                        store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
+                        store.exchangeRates[SECTION_CURRENCY1],
+                        store.registry["$SECTION_UK/$SUB_SECTION_TAX"],
+                    ).collectLatest { (newMoneyPerYear, timeOff, currency1, ukTax) ->
+                        val taxD = ukTax?.resolve()?.toDouble() ?: 0.0
+                        val gross = (newMoneyPerYear?.resolve()?.toDouble() ?: 0.0) + taxD
+                        store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
+                            if (gross > 0) {
+                                gross.chainify() / WEEKS_PER_YEAR / timeOff?.toFeeMultiplier() / currency1?.rate
+                            } else {
+                                null
+                            }
+                    }
+                }
+            },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
