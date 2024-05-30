@@ -16,7 +16,7 @@ import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.MONEY_PER_WEEK
 import app.gaborbiro.freelancecalculator.repo.tax.TaxCalculator
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
-import app.gaborbiro.freelancecalculator.ui.view.MoneyOverTime
+import app.gaborbiro.freelancecalculator.ui.view.MoneyBreakdown
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
@@ -73,7 +73,7 @@ fun ColumnScope.UKTaxSection(
         }
 
     taxInfo?.let {
-        MoneyOverTime(
+        MoneyBreakdown(
             collapseId = "$sectionId/net:collapse",
             title = "Tax (UK 23/24, $inputId->$sectionId)",
             store = store,

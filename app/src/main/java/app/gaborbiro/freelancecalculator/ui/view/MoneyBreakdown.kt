@@ -39,13 +39,13 @@ import app.gaborbiro.freelancecalculator.util.times
 @OptIn(ExperimentalLayoutApi::class)
 @ExperimentalMaterial3Api
 @Composable
-fun ColumnScope.MoneyOverTime(
+fun ColumnScope.MoneyBreakdown(
     collapseId: String,
     title: String? = null,
     store: Store,
     moneyPerWeek: ArithmeticChain?,
     extraContent: (@Composable ColumnScope.() -> Unit)? = null,
-    onMoneyPerWeekChange: (newValue: ArithmeticChain?) -> Unit,
+    onMoneyPerWeekChanged: (newValue: ArithmeticChain?) -> Unit,
 ) {
     val expanded: Boolean? by store.sectionExpander[collapseId].collectAsState(initial = true)
     val daysPerWeek by store.daysPerWeek.collectAsState(initial = null)
@@ -63,7 +63,7 @@ fun ColumnScope.MoneyOverTime(
             value = (moneyPerWeek * WEEKS_PER_YEAR)?.resolve().format(decimalCount = 0),
             outlined = true,
         ) { newValue ->
-            onMoneyPerWeekChange(newValue / WEEKS_PER_YEAR)
+            onMoneyPerWeekChanged(newValue / WEEKS_PER_YEAR)
         }
         FocusPinnedInputField(
             modifier = Modifier
@@ -72,7 +72,7 @@ fun ColumnScope.MoneyOverTime(
             value = (moneyPerWeek * WEEKS_PER_MONTH)?.resolve().format(decimalCount = 0),
             outlined = true,
         ) { newValue ->
-            onMoneyPerWeekChange(newValue / WEEKS_PER_MONTH)
+            onMoneyPerWeekChanged(newValue / WEEKS_PER_MONTH)
         }
 
         AnimatedVisibility(
@@ -87,7 +87,7 @@ fun ColumnScope.MoneyOverTime(
                 value = moneyPerWeek?.resolve().format(decimalCount = 0),
                 outlined = true,
             ) { newValue ->
-                onMoneyPerWeekChange(newValue?.chainify())
+                onMoneyPerWeekChanged(newValue?.chainify())
             }
         }
 
@@ -103,7 +103,7 @@ fun ColumnScope.MoneyOverTime(
                 value = (moneyPerWeek / daysPerWeek)?.resolve().format(decimalCount = 2),
                 outlined = true,
             ) { newValue ->
-                onMoneyPerWeekChange(newValue?.chainify() * daysPerWeek)
+                onMoneyPerWeekChanged(newValue?.chainify() * daysPerWeek)
             }
         }
 
@@ -133,11 +133,11 @@ private fun MoneyOverTimePreview() {
                     .padding(vertical = PADDING_LARGE),
                 verticalArrangement = Arrangement.spacedBy(PADDING_LARGE),
             ) {
-                MoneyOverTime(
+                MoneyBreakdown(
                     collapseId = "dummy",
                     store = Store.dummyImplementation(),
                     moneyPerWeek = 1.0.chainify(),
-                    onMoneyPerWeekChange = { }
+                    onMoneyPerWeekChanged = { }
                 )
             }
         }

@@ -24,13 +24,15 @@ import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_TAX
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
+import app.gaborbiro.freelancecalculator.ui.sections.ExchangeRate
+import app.gaborbiro.freelancecalculator.ui.sections.Fee
 import app.gaborbiro.freelancecalculator.ui.sections.currency.CurrencySection
 import app.gaborbiro.freelancecalculator.ui.sections.daysperweek.DaysPerWeekSection
 import app.gaborbiro.freelancecalculator.ui.sections.fee.FeeSection
 import app.gaborbiro.freelancecalculator.ui.sections.fee.toFeeMultiplier
 import app.gaborbiro.freelancecalculator.ui.sections.tax.UKTaxSection
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
-import app.gaborbiro.freelancecalculator.ui.view.MoneyOverTime
+import app.gaborbiro.freelancecalculator.ui.view.MoneyBreakdown
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
@@ -60,12 +62,12 @@ fun ColumnScope.ResultsSection(
         .registry["${SECTION_BASE}:${MONEY_PER_WEEK}"]
         .collectAsState(initial = null)
 
-    MoneyOverTime(
+    MoneyBreakdown(
         collapseId = "$SECTION_BASE:collapse",
         title = "Base (->$SECTION_BASE)",
         store = store,
         moneyPerWeek = baseMoneyPerWeek.value,
-        onMoneyPerWeekChange = { newMoneyPerWeek ->
+        onMoneyPerWeekChanged = { newMoneyPerWeek ->
             store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
                 newMoneyPerWeek
         },
@@ -76,6 +78,7 @@ fun ColumnScope.ResultsSection(
         sectionId = SECTION_TIMEOFF,
         title = "Time off",
         store = store,
+        externalOperands = emptyList(),
         onMoneyPerWeekChanged = {
             store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] = it
         }
@@ -87,6 +90,7 @@ fun ColumnScope.ResultsSection(
         title = "Currency",
         store = store,
         currencyRepository = currencyRepository,
+        externalOperands = listOf(Fee("$SECTION_TIMEOFF:$TYPE_FEE")),
         onMoneyPerWeekChanged = { newMoneyPerWeek ->
             CoroutineScope(Dispatchers.IO).launch {
                 zip(
@@ -95,7 +99,7 @@ fun ColumnScope.ResultsSection(
                 )
                     .collectLatest { (newMoneyPerWeek, timeOff) ->
                         store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
-                            newMoneyPerWeek / timeOff
+                            newMoneyPerWeek / timeOff.toFeeMultiplier()
                     }
             }
         }
@@ -111,6 +115,10 @@ fun ColumnScope.ResultsSection(
             sectionId = "$SECTION_PT/$SUB_SECTION_TAX",
             title = "PT Tax",
             store = store,
+            externalOperands = listOf(
+                Fee("$SECTION_TIMEOFF:$TYPE_FEE"),
+                ExchangeRate(SECTION_CURRENCY1),
+            ),
             onMoneyPerWeekChanged = { newMoneyPerWeek ->
                 CoroutineScope(Dispatchers.IO).launch {
                     zip(
@@ -119,7 +127,7 @@ fun ColumnScope.ResultsSection(
                         store.exchangeRates[SECTION_CURRENCY1],
                     ).collectLatest { (newMoneyPerWeek, timeOff, currency1) ->
                         store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
-                            newMoneyPerWeek / timeOff?.toFeeMultiplier() / currency1?.rate
+                            newMoneyPerWeek / timeOff.toFeeMultiplier() / currency1?.rate
                     }
                 }
             },
@@ -131,6 +139,11 @@ fun ColumnScope.ResultsSection(
             title = "Currency",
             store = store,
             currencyRepository = currencyRepository,
+            externalOperands = listOf(
+                Fee("$SECTION_TIMEOFF:$TYPE_FEE"),
+                ExchangeRate(SECTION_CURRENCY1),
+                Fee("$SECTION_PT/$SUB_SECTION_TAX:$TYPE_FEE"),
+            ),
             onMoneyPerWeekChanged = { newMoneyPerWeek ->
                 CoroutineScope(Dispatchers.IO).launch {
                     zip(
@@ -140,7 +153,7 @@ fun ColumnScope.ResultsSection(
                         store.registry["$SECTION_PT/$SUB_SECTION_TAX:$TYPE_FEE"],
                     ).collectLatest { (newMoneyPerWeek, timeOff, currency1, ptTaxRate) ->
                         store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] =
-                            newMoneyPerWeek / ptTaxRate?.toFeeMultiplier() / currency1?.rate / timeOff?.toFeeMultiplier()
+                            newMoneyPerWeek / ptTaxRate.toFeeMultiplier() / currency1?.rate / timeOff.toFeeMultiplier()
                     }
                 }
             },
@@ -172,6 +185,11 @@ fun ColumnScope.ResultsSection(
             title = "Currency",
             store = store,
             currencyRepository = currencyRepository,
+            externalOperands = listOf(
+                Fee("$SECTION_TIMEOFF:$TYPE_FEE"),
+                ExchangeRate(SECTION_CURRENCY1),
+                Fee("$SECTION_UK/$SUB_SECTION_TAX"),
+            ),
             onMoneyPerWeekChanged = { newMoneyPerWeek ->
                 CoroutineScope(Dispatchers.IO).launch {
                     zip(

@@ -10,9 +10,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.MONEY_PER_WEEK
+import app.gaborbiro.freelancecalculator.ui.sections.Fee
+import app.gaborbiro.freelancecalculator.ui.sections.Operand
+import app.gaborbiro.freelancecalculator.ui.sections.SectionBuilder
 import app.gaborbiro.freelancecalculator.ui.view.FocusPinnedInputField
-import app.gaborbiro.freelancecalculator.ui.view.MoneyOverTime
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
@@ -28,27 +29,25 @@ fun ColumnScope.FeeSection(
     sectionId: String,
     title: String,
     store: Store,
+    externalOperands: List<Operand>,
     onMoneyPerWeekChanged: (ArithmeticChain?) -> Unit,
 ) {
-    val moneyPerWeek by store
-        .registry["$inputId:$MONEY_PER_WEEK"]
-        .collectAsState(initial = null)
-
-    val fee by store
+    val fee: ArithmeticChain? by store
         .registry["$sectionId:$TYPE_FEE"]
         .collectAsState(initial = null)
 
     val feeMultiplier = remember(fee) { fee.toFeeMultiplier() }
 
-    val outputMoneyPerWeek = moneyPerWeek * feeMultiplier
+    val builder = SectionBuilder(inputId, sectionId, title, store, onMoneyPerWeekChanged)
 
-    store.registry["$sectionId:$MONEY_PER_WEEK"] = outputMoneyPerWeek
-
-    MoneyOverTime(
-        collapseId = "$sectionId:collapse",
-        title = "$title ($inputId->$sectionId)",
-        store = store,
-        moneyPerWeek = outputMoneyPerWeek,
+    builder.MoneyBreakdown(
+        this,
+        output = { moneyPerWeek ->
+            moneyPerWeek * feeMultiplier
+        },
+        reverse = { newValue ->
+            newValue / feeMultiplier
+        },
         extraContent = {
             FocusPinnedInputField(
                 modifier = Modifier
@@ -61,11 +60,10 @@ fun ColumnScope.FeeSection(
                     store.registry["${sectionId}:${TYPE_FEE}"] = fee?.chainify()
                 },
             )
-        }
-    ) { newValue: ArithmeticChain? ->
-        val newMoneyPerWeek = newValue / feeMultiplier
-        onMoneyPerWeekChanged(newMoneyPerWeek)
-    }
+        },
+        operand = Fee("$sectionId:$TYPE_FEE"),
+        externalOperands = externalOperands,
+    )
 }
 
 fun ArithmeticChain?.toFeeMultiplier() = resolve()

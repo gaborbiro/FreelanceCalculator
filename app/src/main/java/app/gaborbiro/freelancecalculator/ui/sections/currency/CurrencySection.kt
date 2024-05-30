@@ -18,11 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.MONEY_PER_WEEK
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.model.ExchangeRateUIModel
+import app.gaborbiro.freelancecalculator.ui.sections.ExchangeRate
+import app.gaborbiro.freelancecalculator.ui.sections.Fee
+import app.gaborbiro.freelancecalculator.ui.sections.Operand
+import app.gaborbiro.freelancecalculator.ui.sections.SectionBuilder
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
-import app.gaborbiro.freelancecalculator.ui.view.MoneyOverTime
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.Lce
 import app.gaborbiro.freelancecalculator.util.div
@@ -37,15 +39,12 @@ fun ColumnScope.CurrencySection(
     title: String,
     store: Store,
     currencyRepository: CurrencyRepository,
+    externalOperands: List<Operand>,
     onMoneyPerWeekChanged: (ArithmeticChain?) -> Unit,
 ) {
     val selectedCurrency by store.currencies[sectionId]
         .collectAsState(initial = null)
     val (fromCurrency, toCurrency) = selectedCurrency ?: (null to null)
-
-    val moneyPerWeek by store
-        .registry["${inputId}:$MONEY_PER_WEEK"]
-        .collectAsState(initial = null)
 
     var rateUIModel: ExchangeRateUIModel by remember {
         mutableStateOf(
@@ -103,18 +102,16 @@ fun ColumnScope.CurrencySection(
         }
     }
 
-    val outputMoneyPerWeek = if (fromCurrency != null && toCurrency != null) {
-        moneyPerWeek * rateUIModel.rate
-    } else {
-        null
-    }
-    store.registry["${sectionId}:$MONEY_PER_WEEK"] = outputMoneyPerWeek
+    val sectionBuilder = SectionBuilder(inputId, sectionId, title, store, onMoneyPerWeekChanged)
 
-    MoneyOverTime(
-        collapseId = "${sectionId}:collapse",
-        title = "$title ($inputId->$sectionId)",
-        store = store,
-        moneyPerWeek = outputMoneyPerWeek,
+    sectionBuilder.MoneyBreakdown(
+        this,
+        output = { moneyPerWeek ->
+            moneyPerWeek * rateUIModel.rate
+        },
+        reverse = { newValue ->
+            newValue / rateUIModel.rate
+        },
         extraContent = {
             Row {
                 CurrencySelector(
@@ -146,9 +143,8 @@ fun ColumnScope.CurrencySection(
                     lineHeight = 12.sp,
                 )
             }
-        }
-    ) { newValue: ArithmeticChain? ->
-        val newMoneyPerWeek = newValue / rateUIModel.rate
-        onMoneyPerWeekChanged(newMoneyPerWeek)
-    }
+        },
+        operand = ExchangeRate(sectionId),
+        externalOperands = externalOperands,
+    )
 }
