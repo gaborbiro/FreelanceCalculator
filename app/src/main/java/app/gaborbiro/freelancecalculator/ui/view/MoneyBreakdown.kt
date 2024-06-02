@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +33,8 @@ import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_MONTH
 import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.times
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 /**
  * @param collapseId globally unique
@@ -45,10 +48,10 @@ fun ColumnScope.MoneyBreakdown(
     store: Store,
     moneyPerWeek: ArithmeticChain?,
     extraContent: (@Composable ColumnScope.() -> Unit)? = null,
-    onMoneyPerWeekChanged: (newValue: ArithmeticChain?) -> Unit,
-) {
+): Flow<ArithmeticChain?> {
     val expanded: Boolean? by store.sectionExpander[collapseId].collectAsState(initial = true)
     val daysPerWeek by store.daysPerWeek.collectAsState(initial = null)
+    val output = remember { MutableSharedFlow<ArithmeticChain?>() }
 
     FlowCard(
         modifier = Modifier
@@ -63,7 +66,7 @@ fun ColumnScope.MoneyBreakdown(
             value = (moneyPerWeek * WEEKS_PER_YEAR)?.resolve().format(decimalCount = 0),
             outlined = true,
         ) { newValue ->
-            onMoneyPerWeekChanged(newValue / WEEKS_PER_YEAR)
+            output.tryEmit(newValue / WEEKS_PER_YEAR)
         }
         FocusPinnedInputField(
             modifier = Modifier
@@ -72,7 +75,7 @@ fun ColumnScope.MoneyBreakdown(
             value = (moneyPerWeek * WEEKS_PER_MONTH)?.resolve().format(decimalCount = 0),
             outlined = true,
         ) { newValue ->
-            onMoneyPerWeekChanged(newValue / WEEKS_PER_MONTH)
+            output.tryEmit(newValue / WEEKS_PER_MONTH)
         }
 
         AnimatedVisibility(
@@ -87,7 +90,7 @@ fun ColumnScope.MoneyBreakdown(
                 value = moneyPerWeek?.resolve().format(decimalCount = 0),
                 outlined = true,
             ) { newValue ->
-                onMoneyPerWeekChanged(newValue?.chainify())
+                output.tryEmit(newValue?.chainify())
             }
         }
 
@@ -103,7 +106,7 @@ fun ColumnScope.MoneyBreakdown(
                 value = (moneyPerWeek / daysPerWeek)?.resolve().format(decimalCount = 2),
                 outlined = true,
             ) { newValue ->
-                onMoneyPerWeekChanged(newValue?.chainify() * daysPerWeek)
+                output.tryEmit(newValue?.chainify() * daysPerWeek)
             }
         }
 
@@ -115,6 +118,7 @@ fun ColumnScope.MoneyBreakdown(
             sectionExpander = store.sectionExpander,
         )
     }
+    return output
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -137,7 +141,6 @@ private fun MoneyOverTimePreview() {
                     collapseId = "dummy",
                     store = Store.dummyImplementation(),
                     moneyPerWeek = 1.0.chainify(),
-                    onMoneyPerWeekChanged = { }
                 )
             }
         }

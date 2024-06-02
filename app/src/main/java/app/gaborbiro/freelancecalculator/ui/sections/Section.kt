@@ -5,9 +5,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.ui.view.MoneyBreakdown
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 
 class SectionBuilder(
@@ -15,7 +18,6 @@ class SectionBuilder(
     private val sectionId: String,
     private val title: String,
     private val store: Store,
-    private val onMoneyPerWeekChanged: (newValue: ArithmeticChain?) -> Unit,
 ) {
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -28,25 +30,27 @@ class SectionBuilder(
         extraContent: (@Composable ColumnScope.() -> Unit)? = null,
         operand: Operand,
         externalOperands: List<Operand>,
-    ) {
+    ): Flow<ArithmeticChain?> {
         val moneyPerWeek by store
             .registry["$inputId:${Store.MONEY_PER_WEEK}"]
             .collectAsState(initial = null)
 
-        val outputMoneyPerWeek = output(moneyPerWeek)
+        val outputMoneyPerWeek = remember(moneyPerWeek) {
+            val output = output(moneyPerWeek)
+            store.registry["${sectionId}:${Store.MONEY_PER_WEEK}"] = output
+            output
+        }
 
-        store.registry["${sectionId}:${Store.MONEY_PER_WEEK}"] = outputMoneyPerWeek
-
-        scope.MoneyBreakdown(
+        return scope.MoneyBreakdown(
             collapseId = "$sectionId:collapse",
             title = "$title ($inputId->$sectionId)",
             store = store,
             moneyPerWeek = outputMoneyPerWeek,
             extraContent = extraContent,
-            onMoneyPerWeekChanged = { newValue: ArithmeticChain? ->
-                onMoneyPerWeekChanged(reverse(newValue))
-            },
         )
+            .map {
+                reverse(it)
+            }
     }
 }
 

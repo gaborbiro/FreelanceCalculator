@@ -21,7 +21,6 @@ import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.model.ExchangeRateUIModel
 import app.gaborbiro.freelancecalculator.ui.sections.ExchangeRate
-import app.gaborbiro.freelancecalculator.ui.sections.Fee
 import app.gaborbiro.freelancecalculator.ui.sections.Operand
 import app.gaborbiro.freelancecalculator.ui.sections.SectionBuilder
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
@@ -29,6 +28,7 @@ import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.Lce
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.times
+import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FlowOperatorInvokedInComposition")
@@ -40,8 +40,7 @@ fun ColumnScope.CurrencySection(
     store: Store,
     currencyRepository: CurrencyRepository,
     externalOperands: List<Operand>,
-    onMoneyPerWeekChanged: (ArithmeticChain?) -> Unit,
-) {
+): Flow<ArithmeticChain?> {
     val selectedCurrency by store.currencies[sectionId]
         .collectAsState(initial = null)
     val (fromCurrency, toCurrency) = selectedCurrency ?: (null to null)
@@ -102,9 +101,11 @@ fun ColumnScope.CurrencySection(
         }
     }
 
-    val sectionBuilder = SectionBuilder(inputId, sectionId, title, store, onMoneyPerWeekChanged)
+    val sectionBuilder = remember {
+        SectionBuilder(inputId, sectionId, title, store)
+    }
 
-    sectionBuilder.MoneyBreakdown(
+    return sectionBuilder.MoneyBreakdown(
         this,
         output = { moneyPerWeek ->
             moneyPerWeek * rateUIModel.rate
@@ -134,7 +135,11 @@ fun ColumnScope.CurrencySection(
                 ) {
                     store.currencies[sectionId] = fromCurrency to it
                 }
-                val sinceStr = rateUIModel.since + if (rateUIModel.error) "(error)" else ""
+
+                val sinceStr = remember(rateUIModel) {
+                    rateUIModel.since + if (rateUIModel.error) "(error)" else ""
+                }
+
                 Text(
                     modifier = Modifier
                         .padding(top = PADDING_LARGE),

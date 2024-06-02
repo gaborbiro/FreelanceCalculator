@@ -23,6 +23,9 @@ import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.times
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FlowOperatorInvokedInComposition")
@@ -31,8 +34,7 @@ fun ColumnScope.UKTaxSection(
     inputId: String,
     sectionId: String,
     store: Store,
-    onMoneyPerWeekChanged: (ArithmeticChain?) -> Unit,
-) {
+): Flow<ArithmeticChain?> {
     val moneyPerWeek by store
         .registry["$inputId:$MONEY_PER_WEEK"]
         .collectAsState(initial = null)
@@ -72,27 +74,29 @@ fun ColumnScope.UKTaxSection(
             if (total > 0) total.chainify() else null
         }
 
-    taxInfo?.let {
-        MoneyBreakdown(
-            collapseId = "$sectionId/net:collapse",
-            title = "Tax (UK 23/24, $inputId->$sectionId)",
-            store = store,
-            moneyPerWeek = taxInfo.afterTaxPerWeek,
-            extraContent = {
-                TaxBreakdownSection(
-                    collapseId = "$sectionId/tax:collapse",
-                    taxModel = taxInfo,
-                    sectionExpander = store.sectionExpander,
-                )
-            }
-        ) { newValue: ArithmeticChain? ->
-            val perYear = newValue * WEEKS_PER_YEAR
-            val newMoneyPerWeek = perYear?.resolve()?.let {
-                taxCalculator.calculateIncomeFromGross(it.toDouble())
-            } / WEEKS_PER_YEAR
-            onMoneyPerWeekChanged(newMoneyPerWeek)
+    return taxInfo
+        ?.let {
+            MoneyBreakdown(
+                collapseId = "$sectionId/net:collapse",
+                title = "Tax (UK 23/24, $inputId->$sectionId)",
+                store = store,
+                moneyPerWeek = taxInfo.afterTaxPerWeek,
+                extraContent = {
+                    TaxBreakdownSection(
+                        collapseId = "$sectionId/tax:collapse",
+                        taxModel = taxInfo,
+                        sectionExpander = store.sectionExpander,
+                    )
+                }
+            )
+                .map { newValue: ArithmeticChain? ->
+                    val perYear = newValue * WEEKS_PER_YEAR
+                    perYear?.resolve()?.let {
+                        taxCalculator.calculateIncomeFromGross(it.toDouble())
+                    } / WEEKS_PER_YEAR
+                }
         }
-    }
+        ?: emptyFlow()
 }
 
 @Preview
@@ -107,7 +111,6 @@ private fun TaxBreakdownSectionPreview() {
             inputId = "",
             sectionId = "",
             store = Store.dummyImplementation(),
-            onMoneyPerWeekChanged = {},
         )
     }
 }

@@ -20,6 +20,7 @@ import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.resolve
 import app.gaborbiro.freelancecalculator.util.times
+import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FlowOperatorInvokedInComposition")
@@ -30,17 +31,19 @@ fun ColumnScope.FeeSection(
     title: String,
     store: Store,
     externalOperands: List<Operand>,
-    onMoneyPerWeekChanged: (ArithmeticChain?) -> Unit,
-) {
-    val fee: ArithmeticChain? by store
+): Flow<ArithmeticChain?> {
+    val fee by store
         .registry["$sectionId:$TYPE_FEE"]
         .collectAsState(initial = null)
 
     val feeMultiplier = remember(fee) { fee.toFeeMultiplier() }
+    val feeStr = remember(fee) { fee.resolve().format(decimalCount = 2) }
 
-    val builder = SectionBuilder(inputId, sectionId, title, store, onMoneyPerWeekChanged)
+    val builder = remember {
+        SectionBuilder(inputId, sectionId, title, store)
+    }
 
-    builder.MoneyBreakdown(
+    return builder.MoneyBreakdown(
         this,
         output = { moneyPerWeek ->
             moneyPerWeek * feeMultiplier
@@ -53,10 +56,10 @@ fun ColumnScope.FeeSection(
                 modifier = Modifier
                     .wrapContentSize(),
                 label = "%",
-                value = fee.resolve().format(decimalCount = 2),
+                value = feeStr,
                 outlined = false,
                 clearButtonVisible = true,
-                onValueChange = { fee: Double? ->
+                onValueChange = { fee ->
                     store.registry["${sectionId}:${TYPE_FEE}"] = fee?.chainify()
                 },
             )
