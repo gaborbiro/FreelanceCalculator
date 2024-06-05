@@ -53,7 +53,7 @@ android {
     productFlavors {
         create("local") {
             setDimension("environment")
-            val rapidApiKey = gradleLocalProperties(rootDir).getProperty("RAPIDAPI_API_KEY")
+            val rapidApiKey = gradleLocalProperties(rootDir).getProperty("RAPIDAPI_API_KEY") ?: "missing rapidapk key"
             buildConfigField("String", "RAPIDAPI_API_KEY", rapidApiKey)
         }
         create("gitAction") {
