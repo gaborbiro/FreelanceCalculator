@@ -39,11 +39,13 @@ jobs:
         uses: android-actions/setup-android@v2.0.10
 
       - name: Build Debug apk
-        run: ./gradlew assembleDebug --stacktrace
+        env:
+          RAPIDAPI_API_KEY: ${{ secrets.RAPIDAPI_API_KEY }}
+        run: ./gradlew assembleGitAction --stacktrace
 
       - name: Get debug file apk path
         id: debugApk
-        run: echo "apkfile=$(find app/build/outputs/apk/debug/*.apk)" >> $GITHUB_OUTPUT
+        run: echo "apkfile=$(find app/build/outputs/apk/gitAction/debug/*.apk)" >> $GITHUB_OUTPUT
 
       - name: Upload Debug Build to Artifacts
         uses: actions/upload-artifact@v4
