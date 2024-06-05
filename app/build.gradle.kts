@@ -59,7 +59,7 @@ android {
         create("gitAction") {
             setDimension("environment")
             val rapidApiKey = System.getenv("RAPIDAPI_API_KEY") ?: "missing rapidapk key"
-            buildConfigField("String", "RAPIDAPI_API_KEY", rapidApiKey)
+            buildConfigField("String", "RAPIDAPI_API_KEY", "\"$rapidApiKey\"")
         }
     }
     compileOptions {
