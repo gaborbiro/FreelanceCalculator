@@ -22,7 +22,20 @@ android {
             useSupportLibrary = true
         }
     }
-
+    signingConfigs {
+        getByName("debug") {
+            keyAlias = "debug"
+            keyPassword = "keystore"
+            storeFile = file("signing/debug_keystore.jks")
+            storePassword = "keystore"
+        }
+//        create("release") {
+//            keyAlias = "release"
+//            keyPassword = "my release key password"
+//            storeFile = file("/home/miles/keystore.jks")
+//            storePassword = "my keystore password"
+//        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
