@@ -38,10 +38,10 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2.0.10
 
-      - name: Build Release apk
+      - name: Build Debug apk
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Get release file apk path
+      - name: Get debug file apk path
         id: debugApk
         run: echo "apkfile=$(find app/build/outputs/apk/debug/*.apk)" >> $GITHUB_OUTPUT
 
