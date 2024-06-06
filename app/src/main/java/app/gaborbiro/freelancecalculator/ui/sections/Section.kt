@@ -7,8 +7,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
+import app.gaborbiro.freelancecalculator.ui.sections.fee.toFeeMultiplier
 import app.gaborbiro.freelancecalculator.ui.view.MoneyBreakdown
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
+import app.gaborbiro.freelancecalculator.util.div
+import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -23,20 +26,21 @@ class SectionBuilder(
     @OptIn(ExperimentalMaterial3Api::class)
     @ExperimentalMaterial3Api
     @Composable
-    fun MoneyBreakdown(
+    fun Section(
         scope: ColumnScope,
-        output: (moneyPerWeek: ArithmeticChain?) -> ArithmeticChain?,
-        reverse: (moneyPerWeek: ArithmeticChain?) -> ArithmeticChain?,
         extraContent: (@Composable ColumnScope.() -> Unit)? = null,
-        operand: Operand,
-        externalOperands: List<Operand>,
+        multiplier: Multiplier,
     ): Flow<ArithmeticChain?> {
         val moneyPerWeek by store
             .registry["$inputId:${Store.MONEY_PER_WEEK}"]
             .collectAsState(initial = null)
 
+        val multiplier by multiplier
+            .getFromStore(store)
+            .collectAsState(initial = null)
+
         val outputMoneyPerWeek = remember(moneyPerWeek) {
-            val output = output(moneyPerWeek)
+            val output = moneyPerWeek * multiplier
             store.registry["${sectionId}:${Store.MONEY_PER_WEEK}"] = output
             output
         }
@@ -49,12 +53,26 @@ class SectionBuilder(
             extraContent = extraContent,
         )
             .map {
-                reverse(it)
+                it / multiplier
             }
     }
 }
 
-open class Operand(storeID: String)
+sealed class Multiplier {
 
-class Fee(storeID: String) : Operand(storeID)
-class ExchangeRate(storeID: String) : Operand(storeID)
+    class Fee(private val storeID: String) : Multiplier() {
+        override fun getFromStore(store: Store): Flow<Double?> {
+            return store.registry[storeID]
+                .map { it.toFeeMultiplier() }
+        }
+    }
+
+    class ExchangeRate(private val storeID: String) : Multiplier() {
+        override fun getFromStore(store: Store): Flow<Double?> {
+            return store.exchangeRates[storeID]
+                .map { it?.rate }
+        }
+    }
+
+    abstract fun getFromStore(store: Store): Flow<Double?>
+}

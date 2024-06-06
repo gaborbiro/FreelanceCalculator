@@ -20,14 +20,11 @@ import androidx.compose.ui.unit.sp
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.model.ExchangeRateUIModel
-import app.gaborbiro.freelancecalculator.ui.sections.ExchangeRate
-import app.gaborbiro.freelancecalculator.ui.sections.Operand
+import app.gaborbiro.freelancecalculator.ui.sections.Multiplier
 import app.gaborbiro.freelancecalculator.ui.sections.SectionBuilder
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.Lce
-import app.gaborbiro.freelancecalculator.util.div
-import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,11 +36,10 @@ fun ColumnScope.CurrencySection(
     title: String,
     store: Store,
     currencyRepository: CurrencyRepository,
-    externalOperands: List<Operand>,
 ): Flow<ArithmeticChain?> {
-    val selectedCurrency by store.currencies[sectionId]
+    val selectedCurrencies by store.currencies[sectionId]
         .collectAsState(initial = null)
-    val (fromCurrency, toCurrency) = selectedCurrency ?: (null to null)
+    val (fromCurrency, toCurrency) = selectedCurrencies ?: (null to null)
 
     var rateUIModel: ExchangeRateUIModel by remember {
         mutableStateOf(
@@ -56,8 +52,9 @@ fun ColumnScope.CurrencySection(
     }
 
     if (fromCurrency != null && toCurrency != null) {
-        rateUIModel = store.exchangeRates[sectionId].collectAsState(initial = null).value
-            ?: rateUIModel
+        rateUIModel = store.exchangeRates[sectionId]
+            .collectAsState(initial = null)
+            .value ?: rateUIModel
 
         val rateResult = remember(fromCurrency, toCurrency) {
             currencyRepository.getRate(
@@ -101,18 +98,12 @@ fun ColumnScope.CurrencySection(
         }
     }
 
-    val sectionBuilder = remember {
+    val builder = remember {
         SectionBuilder(inputId, sectionId, title, store)
     }
 
-    return sectionBuilder.MoneyBreakdown(
+    return builder.Section(
         this,
-        output = { moneyPerWeek ->
-            moneyPerWeek * rateUIModel.rate
-        },
-        reverse = { newValue ->
-            newValue / rateUIModel.rate
-        },
         extraContent = {
             Row {
                 CurrencySelector(
@@ -149,7 +140,6 @@ fun ColumnScope.CurrencySection(
                 )
             }
         },
-        operand = ExchangeRate(sectionId),
-        externalOperands = externalOperands,
+        multiplier = Multiplier.ExchangeRate(sectionId),
     )
 }

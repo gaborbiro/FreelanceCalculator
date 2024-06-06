@@ -25,8 +25,6 @@ import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_TAX
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
-import app.gaborbiro.freelancecalculator.ui.sections.ExchangeRate
-import app.gaborbiro.freelancecalculator.ui.sections.Fee
 import app.gaborbiro.freelancecalculator.ui.sections.currency.CurrencySection
 import app.gaborbiro.freelancecalculator.ui.sections.daysperweek.DaysPerWeekSection
 import app.gaborbiro.freelancecalculator.ui.sections.fee.FeeSection
@@ -37,14 +35,12 @@ import app.gaborbiro.freelancecalculator.ui.view.MoneyBreakdown
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
 import app.gaborbiro.freelancecalculator.util.hide.safelyCalculate2
-import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -73,16 +69,12 @@ fun ColumnScope.ResultsSection(
         store = store,
         moneyPerWeek = baseMoneyPerWeek.value,
     )
-        .map {
-            it
-        }
 
     val timeOffOutput = FeeSection(
         inputId = SECTION_BASE,
         sectionId = SECTION_TIMEOFF,
         title = "Time off",
         store = store,
-        externalOperands = emptyList(),
     )
 
     val currency1Output = CurrencySection(
@@ -91,7 +83,6 @@ fun ColumnScope.ResultsSection(
         title = "Currency",
         store = store,
         currencyRepository = currencyRepository,
-        externalOperands = listOf(Fee("$SECTION_TIMEOFF:$TYPE_FEE")),
     )
 
     val selectedCurrency by store.currencies[SECTION_CURRENCY1]
@@ -104,10 +95,6 @@ fun ColumnScope.ResultsSection(
             sectionId = "$SECTION_PT/$SUB_SECTION_TAX",
             title = "PT Tax",
             store = store,
-            externalOperands = listOf(
-                Fee("$SECTION_TIMEOFF:$TYPE_FEE"),
-                ExchangeRate(SECTION_CURRENCY1),
-            ),
         )
     } else {
         emptyFlow()
@@ -120,11 +107,6 @@ fun ColumnScope.ResultsSection(
             title = "Currency",
             store = store,
             currencyRepository = currencyRepository,
-            externalOperands = listOf(
-                Fee("$SECTION_TIMEOFF:$TYPE_FEE"),
-                ExchangeRate(SECTION_CURRENCY1),
-                Fee("$SECTION_PT/$SUB_SECTION_TAX:$TYPE_FEE"),
-            ),
         )
     } else {
         emptyFlow()
@@ -147,11 +129,6 @@ fun ColumnScope.ResultsSection(
             title = "Currency",
             store = store,
             currencyRepository = currencyRepository,
-            externalOperands = listOf(
-                Fee("$SECTION_TIMEOFF:$TYPE_FEE"),
-                ExchangeRate(SECTION_CURRENCY1),
-                Fee("$SECTION_UK/$SUB_SECTION_TAX"),
-            ),
         )
     } else {
         emptyFlow()
