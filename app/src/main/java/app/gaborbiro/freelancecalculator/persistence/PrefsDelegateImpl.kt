@@ -5,7 +5,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegate
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -29,6 +32,8 @@ class PrefsDelegateImpl<T, S>(
     private val mapper: Mapper<T, S>? = null,
 ) : PrefsDelegate<T> {
 
+    private var job: Job? = null
+
     override operator fun getValue(thisRef: Any?, property: KProperty<*>): Flow<T?> {
         return prefs.data.map { prefs ->
             mapper
@@ -38,9 +43,10 @@ class PrefsDelegateImpl<T, S>(
     }
 
     override operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Flow<T?>) {
-        scope.launch {
-            prefs.edit { pref ->
-                value.collectLatest { latest ->
+        job?.cancel()
+        job = scope.launch {
+            value.cancellable().collectLatest { latest ->
+                prefs.edit { pref ->
                     if (latest != null) {
                         pref[key] = mapper
                             ?.let { it.toStoreType(latest)!! }
