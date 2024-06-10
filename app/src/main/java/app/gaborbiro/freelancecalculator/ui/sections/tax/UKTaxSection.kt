@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.map
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FlowOperatorInvokedInComposition")
 @Composable
-fun ColumnScope.UKTaxSection(
+fun ColumnScope.ukTaxSection(
     inputId: String,
     sectionId: String,
     store: Store,
@@ -78,7 +78,7 @@ fun ColumnScope.UKTaxSection(
         ?.let {
             MoneyBreakdown(
                 collapseId = "$sectionId/net:collapse",
-                title = "Tax (UK 23/24, $inputId->$sectionId)",
+                title = "After tax (UK 23/24, $inputId->$sectionId)",
                 store = store,
                 moneyPerWeek = taxInfo.afterTaxPerWeek,
                 extraContent = {
@@ -107,7 +107,7 @@ private fun TaxBreakdownSectionPreview() {
             .fillMaxWidth()
             .padding(bottom = PADDING_LARGE)
     ) {
-        UKTaxSection(
+        ukTaxSection(
             inputId = "",
             sectionId = "",
             store = Store.dummyImplementation(),

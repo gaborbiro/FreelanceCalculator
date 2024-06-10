@@ -17,6 +17,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -35,6 +36,8 @@ import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.map
 
 /**
  * @param collapseId globally unique
@@ -51,7 +54,7 @@ fun ColumnScope.MoneyBreakdown(
 ): Flow<ArithmeticChain?> {
     val expanded: Boolean? by store.sectionExpander[collapseId].collectAsState(initial = true)
     val daysPerWeek by store.daysPerWeek.collectAsState(initial = null)
-    val output = remember { MutableSharedFlow<ArithmeticChain?>() }
+    val output = remember { MutableSharedFlow<ArithmeticChain?>(extraBufferCapacity = 1) }
 
     FlowCard(
         modifier = Modifier
@@ -59,23 +62,26 @@ fun ColumnScope.MoneyBreakdown(
         extraContent = extraContent,
         title = title,
     ) {
-        FocusPinnedInputField(
+        val perYear = focusPinnedInputField(
             modifier = Modifier
                 .wrapContentSize(),
             label = "per year",
             value = (moneyPerWeek * WEEKS_PER_YEAR)?.resolve().format(decimalCount = 0),
             outlined = true,
-        ) { newValue ->
-            output.tryEmit(newValue / WEEKS_PER_YEAR)
-        }
-        FocusPinnedInputField(
+        )
+            .map { it / WEEKS_PER_YEAR }
+        val perMonth = focusPinnedInputField(
             modifier = Modifier
                 .wrapContentSize(),
             label = "per month",
             value = (moneyPerWeek * WEEKS_PER_MONTH)?.resolve().format(decimalCount = 0),
             outlined = true,
-        ) { newValue ->
-            output.tryEmit(newValue / WEEKS_PER_MONTH)
+        )
+            .map { it / WEEKS_PER_MONTH }
+
+        LaunchedEffect(Unit) {
+            output.emitAll(perYear)
+            output.emitAll(perMonth)
         }
 
         AnimatedVisibility(
@@ -83,14 +89,16 @@ fun ColumnScope.MoneyBreakdown(
             exit = fadeOut(),
             visible = expanded != false
         ) {
-            FocusPinnedInputField(
+            val perWeek = focusPinnedInputField(
                 modifier = Modifier
                     .wrapContentSize(),
                 label = "per week",
                 value = moneyPerWeek?.resolve().format(decimalCount = 0),
                 outlined = true,
-            ) { newValue ->
-                output.tryEmit(newValue?.chainify())
+            )
+                .map { it?.chainify() }
+            LaunchedEffect(Unit) {
+                output.emitAll(perWeek)
             }
         }
 
@@ -99,14 +107,18 @@ fun ColumnScope.MoneyBreakdown(
             exit = fadeOut(),
             visible = expanded != false
         ) {
-            FocusPinnedInputField(
+            val perDay = focusPinnedInputField(
                 modifier = Modifier
                     .wrapContentSize(),
                 label = "per day",
                 value = (moneyPerWeek / daysPerWeek)?.resolve().format(decimalCount = 2),
                 outlined = true,
-            ) { newValue ->
-                output.tryEmit(newValue?.chainify() * daysPerWeek)
+            )
+                .map {
+                    it?.chainify() * daysPerWeek
+                }
+            LaunchedEffect(Unit) {
+                output.emitAll(perDay)
             }
         }
 

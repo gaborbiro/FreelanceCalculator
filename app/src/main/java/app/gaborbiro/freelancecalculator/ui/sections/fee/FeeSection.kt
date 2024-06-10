@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -12,17 +13,18 @@ import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
 import app.gaborbiro.freelancecalculator.ui.sections.Multiplier
 import app.gaborbiro.freelancecalculator.ui.sections.SectionBuilder
-import app.gaborbiro.freelancecalculator.ui.view.FocusPinnedInputField
+import app.gaborbiro.freelancecalculator.ui.view.focusPinnedInputField
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.resolve
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FlowOperatorInvokedInComposition")
 @Composable
-fun ColumnScope.FeeSection(
+fun ColumnScope.feeSection(
     inputId: String,
     sectionId: String,
     title: String,
@@ -38,20 +40,24 @@ fun ColumnScope.FeeSection(
         SectionBuilder(inputId, sectionId, title, store)
     }
 
-    return builder.Section(
+    return builder.section(
         this,
         extraContent = {
-            FocusPinnedInputField(
+            val newFee = focusPinnedInputField(
                 modifier = Modifier
                     .wrapContentSize(),
                 label = "%",
                 value = feeStr,
                 outlined = false,
                 clearButtonVisible = true,
-                onValueChange = { fee ->
-                    store.registry["${sectionId}:${TYPE_FEE}"] = fee?.chainify()
-                },
             )
+                .map { it?.chainify() }
+            LaunchedEffect(Unit) {
+                newFee
+                    .collect {
+                        store.registry["${sectionId}:${TYPE_FEE}"] = it
+                    }
+            }
         },
         multiplier = Multiplier.Fee("$sectionId:$TYPE_FEE"),
     )

@@ -26,11 +26,13 @@ import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.Lce
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onStart
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FlowOperatorInvokedInComposition")
 @Composable
-fun ColumnScope.CurrencySection(
+fun ColumnScope.currencySection(
     inputId: String,
     sectionId: String,
     title: String,
@@ -102,29 +104,38 @@ fun ColumnScope.CurrencySection(
         SectionBuilder(inputId, sectionId, title, store)
     }
 
-    return builder.Section(
+    return builder.section(
         this,
         extraContent = {
             Row {
-                CurrencySelector(
+                val newFromCurrency = currencySelector(
                     modifier = Modifier
                         .width(140.dp)
                         .padding(PADDING_LARGE),
                     selectedCurrency = fromCurrency,
                     label = "From",
                     currencyRepository = currencyRepository,
-                ) {
-                    store.currencies[sectionId] = it to toCurrency
-                }
-                CurrencySelector(
+                )
+                    .onStart { emit(fromCurrency) }
+
+                val newToCurrency = currencySelector(
                     modifier = Modifier
                         .width(140.dp)
                         .padding(PADDING_LARGE),
                     selectedCurrency = toCurrency,
                     label = "To",
                     currencyRepository = currencyRepository
-                ) {
-                    store.currencies[sectionId] = fromCurrency to it
+                )
+                    .onStart { emit(toCurrency) }
+
+                LaunchedEffect(fromCurrency, toCurrency) {
+                    newFromCurrency
+                        .combine(newToCurrency) { f1, f2 -> f1 to f2 }
+                        .collect { (newFromCurrency, newToCurrency) ->
+                            if (newFromCurrency != fromCurrency || newToCurrency != toCurrency) {
+                                store.currencies[sectionId] = newFromCurrency to newToCurrency
+                            }
+                        }
                 }
 
                 val sinceStr = remember(rateUIModel) {

@@ -21,7 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +47,8 @@ import androidx.compose.ui.window.PopupProperties
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.util.Lce
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -54,13 +56,14 @@ import kotlinx.coroutines.launch
     ExperimentalComposeUiApi::class
 )
 @Composable
-fun CurrencySelector(
+fun currencySelector(
     modifier: Modifier,
     label: String,
     selectedCurrency: String?,
     currencyRepository: CurrencyRepository,
-    onCurrencySelected: (currency: String?) -> Unit
-) {
+): Flow<String?> {
+    val output = remember { MutableSharedFlow<String?>(extraBufferCapacity = 1) }
+
     var expanded by remember {
         mutableStateOf(false)
     }
@@ -92,11 +95,11 @@ fun CurrencySelector(
         is Lce.Data -> {
             currencies = data.data
             enabled = true
-            LaunchedEffect(Unit) {
-                selectedCurrency?.let {
-                    if (data.data.contains(it).not()) {
-                        currentText = TextFieldValue("")
-                        onCurrencySelected(null)
+            selectedCurrency?.let {
+                if (data.data.contains(it).not()) {
+                    currentText = TextFieldValue("")
+                    SideEffect {
+                        output.tryEmit(null)
                     }
                 }
             }
@@ -181,7 +184,7 @@ fun CurrencySelector(
                             currentText = currentText.copy(text = filteredCurrencies[0])
                             scope.launch {
                                 delay(200)
-                                onCurrencySelected(filteredCurrencies[0])
+                                output.tryEmit(filteredCurrencies[0])
                                 filter = null
                             }
                         }
@@ -230,7 +233,7 @@ fun CurrencySelector(
                                     currentText = TextFieldValue(currency)
                                     scope.launch {
                                         delay(200)
-                                        onCurrencySelected(currency)
+                                        println(output.tryEmit(currency))
                                         filter = null
                                     }
                                 },
@@ -241,6 +244,7 @@ fun CurrencySelector(
             }
         }
     }
+    return output
 }
 
 @ExperimentalLayoutApi
@@ -249,17 +253,17 @@ fun CurrencySelector(
 @Composable
 private fun CurrencySelectorPreview() {
     Row {
-        CurrencySelector(
+        currencySelector(
             modifier = Modifier.weight(1f),
             selectedCurrency = "USD",
             label = "from",
             currencyRepository = CurrencyRepository.dummyImplementation(),
-        ) {}
-        CurrencySelector(
+        )
+        currencySelector(
             modifier = Modifier.weight(1f),
             selectedCurrency = "GBP",
             label = "to",
             currencyRepository = CurrencyRepository.dummyImplementation(),
-        ) {}
+        )
     }
 }

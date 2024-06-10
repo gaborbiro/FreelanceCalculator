@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.ui.sections.fee.toFeeMultiplier
@@ -13,6 +12,7 @@ import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 
@@ -26,34 +26,36 @@ class SectionBuilder(
     @OptIn(ExperimentalMaterial3Api::class)
     @ExperimentalMaterial3Api
     @Composable
-    fun Section(
+    fun section(
         scope: ColumnScope,
         extraContent: (@Composable ColumnScope.() -> Unit)? = null,
         multiplier: Multiplier,
     ): Flow<ArithmeticChain?> {
-        val moneyPerWeek by store
-            .registry["$inputId:${Store.MONEY_PER_WEEK}"]
-            .collectAsState(initial = null)
+        val multiplier = remember {
+            multiplier.getFromStore(store)
+        }
 
-        val multiplier by multiplier
-            .getFromStore(store)
-            .collectAsState(initial = null)
-
-        val outputMoneyPerWeek = remember(moneyPerWeek) {
-            val output = moneyPerWeek * multiplier
-            store.registry["${sectionId}:${Store.MONEY_PER_WEEK}"] = output
-            output
+        val displayedMoneyPerWeek = remember {
+            combine(
+                store.registry["$inputId:${Store.MONEY_PER_WEEK}"],
+                multiplier
+            ) { f1, f2 ->
+                (f1 * f2)
+                    .also {
+                        store.registry["${sectionId}:${Store.MONEY_PER_WEEK}"] = it
+                    }
+            }
         }
 
         return scope.MoneyBreakdown(
             collapseId = "$sectionId:collapse",
             title = "$title ($inputId->$sectionId)",
             store = store,
-            moneyPerWeek = outputMoneyPerWeek,
+            moneyPerWeek = displayedMoneyPerWeek.collectAsState(initial = null).value,
             extraContent = extraContent,
         )
-            .map {
-                it / multiplier
+            .combine(multiplier) { f1, f2 ->
+                f1 / f2
             }
     }
 }

@@ -28,18 +28,17 @@ import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
-import app.gaborbiro.freelancecalculator.ui.view.SingleInputContainer
+import app.gaborbiro.freelancecalculator.ui.view.singleInputContainer
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.resolve
+import app.gaborbiro.freelancecalculator.util.simplify
 import app.gaborbiro.freelancecalculator.util.times
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
 
 
 @SuppressLint("FlowOperatorInvokedInComposition")
@@ -67,74 +66,85 @@ fun CalculatorContent(
         .registry["${SECTION_BASE}:${HOURS_PER_WEEK}"]
         .collectAsState(initial = null)
 
-    LaunchedEffect(Unit) {
-        store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"]
-            .drop(1)
-            .collect { newMoneyPerWeek ->
-                when (selectedIndex) {
-                    0 -> {
-                        store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"] =
-                            (newMoneyPerWeek / hoursPerWeek)?.simplify()
+    LaunchedEffect(selectedIndex) {
+        val reverseFlow = when (selectedIndex) {
+            0 -> {
+                store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"]
+                    .combine(store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"]) { moneyPerWeek, hoursPerWeek ->
+                        moneyPerWeek / hoursPerWeek
                     }
+                    .map { it.simplify() }
+            }
 
-                    1 -> {
-                        store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] =
-                            (newMoneyPerWeek / feePerHour)?.simplify()
+            1 -> {
+                store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"]
+                    .combine(store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"]) { moneyPerWeek, feePerHour ->
+                        moneyPerWeek / feePerHour
                     }
+                    .map { it.simplify() }
+            }
+
+            2 -> {
+                combine(
+                    store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"],
+                    store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"]
+                ) { feePerHour, hoursPerWeek ->
+                    feePerHour * hoursPerWeek
                 }
             }
+
+            else -> emptyFlow()
+        }
+        reverseFlow.collect {
+            when (selectedIndex) {
+                0 -> {
+                    store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"] = it
+                }
+
+                1 -> {
+                    store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] = it
+                }
+
+                2 -> {
+                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] = it
+                }
+            }
+        }
     }
 
     @Suppress("KotlinConstantConditions")
-    SingleInputContainer(
+    val newFeePerHour = singleInputContainer(
         containerModifier = selectableContainerModifier,
         label = "Fee per hour",
         value = feePerHour.resolve().format(decimalCount = 2),
         clearButtonVisible = true,
         selected = selectedIndex == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
-        onValueChanged = { newFeePerHour: Double? ->
-            CoroutineScope(Dispatchers.IO).launch {
-                if (selectedIndex == 2) {
-                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
-                        hoursPerWeek * newFeePerHour
-                } else if (selectedIndex == 1) {
-                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"]
-                        .collectLatest { moneyPerWeek ->
-                            store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] =
-                                (moneyPerWeek / newFeePerHour)?.simplify()
-                        }
-                }
-                store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"] =
-                    newFeePerHour?.chainify()
-            }
-        },
     )
+    LaunchedEffect(Unit) {
+        newFeePerHour
+            .map { it?.chainify() }
+            .collect {
+                store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"] = it
+            }
+    }
 
-    SingleInputContainer(
+    val newHoursPerWeek = singleInputContainer(
         containerModifier = selectableContainerModifier,
         label = "Hours per week",
         value = hoursPerWeek.resolve().format(decimalCount = 0),
         clearButtonVisible = true,
         selected = selectedIndex == ++indexCounter,
         onSelected = selectionUpdater(indexCounter),
-        onValueChanged = { newHoursPerWeek: Double? ->
-            CoroutineScope(Dispatchers.IO).launch {
-                if (selectedIndex == 2) {
-                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] =
-                        newHoursPerWeek * feePerHour
-                } else if (selectedIndex == 0) {
-                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"]
-                        .collectLatest { moneyPerWeek ->
-                            store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] =
-                                (moneyPerWeek / newHoursPerWeek)?.simplify()
-                        }
-                }
-                store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] =
-                    newHoursPerWeek?.chainify()
-            }
-        },
     )
+
+    LaunchedEffect(newHoursPerWeek) {
+        newHoursPerWeek
+            .map { it?.chainify() }
+            .collect {
+                store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] = it
+            }
+    }
 
     SelectableContainer(
         modifier = selectableContainerModifier,

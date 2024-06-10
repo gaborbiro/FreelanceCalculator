@@ -14,9 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import app.gaborbiro.freelancecalculator.ui.theme.PADDING_DOUBLE
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
-import app.gaborbiro.freelancecalculator.ui.theme.PADDING_TRIPPLE
 
 
 @ExperimentalLayoutApi
@@ -36,7 +34,8 @@ fun FlowCard(
     ) {
         Column {
             extraContent?.invoke(this)
-            val topPadding = if (title.isNullOrBlank() || extraContent != null) 0.dp else PADDING_LARGE
+            val topPadding =
+                if (title.isNullOrBlank() || extraContent != null) 0.dp else PADDING_LARGE
             FlowRow(
                 modifier = Modifier
                     .padding(top = topPadding),

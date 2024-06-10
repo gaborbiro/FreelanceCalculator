@@ -25,25 +25,21 @@ import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_TAX
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
-import app.gaborbiro.freelancecalculator.ui.sections.currency.CurrencySection
+import app.gaborbiro.freelancecalculator.ui.sections.currency.currencySection
 import app.gaborbiro.freelancecalculator.ui.sections.daysperweek.DaysPerWeekSection
-import app.gaborbiro.freelancecalculator.ui.sections.fee.FeeSection
+import app.gaborbiro.freelancecalculator.ui.sections.fee.feeSection
 import app.gaborbiro.freelancecalculator.ui.sections.fee.toFeeMultiplier
-import app.gaborbiro.freelancecalculator.ui.sections.tax.UKTaxSection
+import app.gaborbiro.freelancecalculator.ui.sections.tax.ukTaxSection
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.MoneyBreakdown
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.WEEKS_PER_YEAR
 import app.gaborbiro.freelancecalculator.util.hide.safelyCalculate2
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,14 +66,14 @@ fun ColumnScope.ResultsSection(
         moneyPerWeek = baseMoneyPerWeek.value,
     )
 
-    val timeOffOutput = FeeSection(
+    val timeOffOutput = feeSection(
         inputId = SECTION_BASE,
         sectionId = SECTION_TIMEOFF,
         title = "Time off",
         store = store,
     )
 
-    val currency1Output = CurrencySection(
+    val currency1Output = currencySection(
         inputId = SECTION_TIMEOFF,
         sectionId = SECTION_CURRENCY1,
         title = "Currency",
@@ -90,10 +86,10 @@ fun ColumnScope.ResultsSection(
     val (fromCurrency, toCurrency) = selectedCurrency ?: (null to null)
 
     val ptTaxOutput = if (fromCurrency != null && toCurrency == "EUR") {
-        FeeSection(
+        feeSection(
             inputId = SECTION_CURRENCY1,
             sectionId = "$SECTION_PT/$SUB_SECTION_TAX",
-            title = "PT Tax",
+            title = "After tax (PT '24)",
             store = store,
         )
     } else {
@@ -101,7 +97,7 @@ fun ColumnScope.ResultsSection(
     }
 
     val ptTaxCurrencyOutput = if (fromCurrency != null && toCurrency == "EUR") {
-        CurrencySection(
+        currencySection(
             inputId = "$SECTION_PT/$SUB_SECTION_TAX",
             sectionId = "$SECTION_PT/$SUB_SECTION_CURRENCY",
             title = "Currency",
@@ -113,7 +109,7 @@ fun ColumnScope.ResultsSection(
     }
 
     val ukTaxOutput = if (fromCurrency != null && toCurrency == "GBP") {
-        UKTaxSection(
+        ukTaxSection(
             inputId = SECTION_CURRENCY1,
             sectionId = "$SECTION_UK/$SUB_SECTION_TAX",
             store = store,
@@ -123,7 +119,7 @@ fun ColumnScope.ResultsSection(
     }
 
     val ukTaxCurrencyOutput = if (fromCurrency != null && toCurrency == "GBP") {
-        CurrencySection(
+        currencySection(
             inputId = "$SECTION_UK/$SUB_SECTION_TAX",
             sectionId = "$SECTION_UK/$SUB_SECTION_CURRENCY",
             title = "Currency",
@@ -135,61 +131,60 @@ fun ColumnScope.ResultsSection(
     }
 
     LaunchedEffect(key1 = Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            merge(
-                baseOutput.onEach {
-                    println(it)
+        val newMoneyPerWeek = merge(
+            baseOutput.onEach {
+                println(it)
+            },
+            timeOffOutput,
+            currency1Output
+                .combine(
+                    store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]
+                ) { newMoneyPerWeek, timeOff ->
+                    newMoneyPerWeek / timeOff.toFeeMultiplier()
                 },
-                timeOffOutput,
-                currency1Output
-                    .combine(
-                        store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]
-                    ) { newMoneyPerWeek, timeOff ->
-                        newMoneyPerWeek / timeOff.toFeeMultiplier()
-                    },
-                ptTaxOutput
-                    .combine(store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]) { n, timeOff ->
-                        n / timeOff.toFeeMultiplier()
-                    }
-                    .combine(store.exchangeRates[SECTION_CURRENCY1]) { n, currency1 ->
-                        n / currency1?.rate
-                    },
-                ptTaxCurrencyOutput
-                    .combine(store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]) { n, timeOff ->
-                        n / timeOff.toFeeMultiplier()
-                    }
-                    .combine(store.exchangeRates[SECTION_CURRENCY1]) { n, currency1 ->
-                        n / currency1?.rate
-                    }
-                    .combine(store.registry["$SECTION_PT/$SUB_SECTION_TAX:$TYPE_FEE"]) { n, ptTaxRate ->
-                        n / ptTaxRate.toFeeMultiplier()
-                    },
-                ukTaxOutput
-                    .combine(store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]) { n, timeOff ->
-                        n / timeOff.toFeeMultiplier()
-                    }
-                    .combine(store.exchangeRates[SECTION_CURRENCY1]) { n, currency1 ->
-                        n / currency1?.rate
-                    },
-                ukTaxCurrencyOutput
-                    .combine(store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]) { n, timeOff ->
-                        n / timeOff.toFeeMultiplier()
-                    }
-                    .combine(store.exchangeRates[SECTION_CURRENCY1]) { n, currency1 ->
-                        n / currency1?.rate
-                    }
-                    .combine(store.registry["$SECTION_UK/$SUB_SECTION_TAX"]) { n, ukTax ->
-                        safelyCalculate2(n, ukTax) { n, ukTax ->
-                            val newMoneyPerYear = (n * WEEKS_PER_YEAR).resolve().toDouble()
-                            val taxD = ukTax.resolve().toDouble()
-                            ((newMoneyPerYear + taxD) / WEEKS_PER_YEAR)!!
-                        }
-                    }
-            )
-                .distinctUntilChanged()
-                .collectLatest {
-                    store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] = it
+            ptTaxOutput
+                .combine(store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]) { n, timeOff ->
+                    n / timeOff.toFeeMultiplier()
                 }
+                .combine(store.exchangeRates[SECTION_CURRENCY1]) { n, currency1 ->
+                    n / currency1?.rate
+                },
+            ptTaxCurrencyOutput
+                .combine(store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]) { n, timeOff ->
+                    n / timeOff.toFeeMultiplier()
+                }
+                .combine(store.exchangeRates[SECTION_CURRENCY1]) { n, currency1 ->
+                    n / currency1?.rate
+                }
+                .combine(store.registry["$SECTION_PT/$SUB_SECTION_TAX:$TYPE_FEE"]) { n, ptTaxRate ->
+                    n / ptTaxRate.toFeeMultiplier()
+                },
+            ukTaxOutput
+                .combine(store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]) { n, timeOff ->
+                    n / timeOff.toFeeMultiplier()
+                }
+                .combine(store.exchangeRates[SECTION_CURRENCY1]) { n, currency1 ->
+                    n / currency1?.rate
+                },
+            ukTaxCurrencyOutput
+                .combine(store.registry["$SECTION_TIMEOFF:$TYPE_FEE"]) { n, timeOff ->
+                    n / timeOff.toFeeMultiplier()
+                }
+                .combine(store.exchangeRates[SECTION_CURRENCY1]) { n, currency1 ->
+                    n / currency1?.rate
+                }
+                .combine(store.registry["$SECTION_UK/$SUB_SECTION_TAX"]) { n, ukTax ->
+                    safelyCalculate2(n, ukTax) { n, ukTax ->
+                        val newMoneyPerYear = (n * WEEKS_PER_YEAR).resolve().toDouble()
+                        val taxD = ukTax.resolve().toDouble()
+                        ((newMoneyPerYear + taxD) / WEEKS_PER_YEAR)!!
+                    }
+                }
+        )
+            .distinctUntilChanged()
+
+        newMoneyPerWeek.collect {
+            store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] = it
         }
     }
 }
