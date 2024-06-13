@@ -95,20 +95,14 @@ fun CalculatorContent(
 
             else -> emptyFlow()
         }
-        reverseFlow.collect {
-            when (selectedIndex) {
-                0 -> {
-                    store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"] = it
-                }
-
-                1 -> {
-                    store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] = it
-                }
-
-                2 -> {
-                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"] = it
-                }
-            }
+        val key = when (selectedIndex) {
+            0 -> "${SECTION_BASE}:${FEE_PER_HOUR}"
+            1 -> "${SECTION_BASE}:${HOURS_PER_WEEK}"
+            2 -> "${SECTION_BASE}:${MONEY_PER_WEEK}"
+            else -> null
+        }
+        key?.let {
+            store.registry.put(key, reverseFlow)
         }
     }
 
@@ -122,11 +116,11 @@ fun CalculatorContent(
         onSelected = selectionUpdater(indexCounter),
     )
     LaunchedEffect(Unit) {
-        newFeePerHour
-            .map { it?.chainify() }
-            .collect {
-                store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"] = it
-            }
+        store.registry.put(
+            "${SECTION_BASE}:${FEE_PER_HOUR}",
+            newFeePerHour
+                .map { it?.chainify() }
+        )
     }
 
     val newHoursPerWeek = singleInputContainer(
@@ -139,11 +133,11 @@ fun CalculatorContent(
     )
 
     LaunchedEffect(newHoursPerWeek) {
-        newHoursPerWeek
-            .map { it?.chainify() }
-            .collect {
-                store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] = it
-            }
+        store.registry.put(
+            "${SECTION_BASE}:${HOURS_PER_WEEK}",
+            newHoursPerWeek
+                .map { it?.chainify() }
+        )
     }
 
     SelectableContainer(

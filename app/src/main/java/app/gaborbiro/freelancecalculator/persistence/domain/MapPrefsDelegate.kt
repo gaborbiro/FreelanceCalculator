@@ -8,6 +8,8 @@ interface MapPrefsDelegate<T> {
     operator fun get(subKey: String): Flow<T?>
     operator fun set(subKey: String, value: T?)
 
+    fun put(subKey: String, value: Flow<T?>)
+
     companion object {
         fun <T> dummyImplementation(value: Map<String, T> = emptyMap()): MapPrefsDelegate<T> {
             return object : MapPrefsDelegate<T> {
@@ -16,6 +18,9 @@ interface MapPrefsDelegate<T> {
                 }
 
                 override fun set(subKey: String, value: T?) {
+                }
+
+                override fun put(subKey: String, value: Flow<T?>) {
                 }
             }
         }

@@ -20,13 +20,14 @@ import androidx.compose.ui.unit.sp
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.model.ExchangeRateUIModel
-import app.gaborbiro.freelancecalculator.ui.sections.Multiplier
 import app.gaborbiro.freelancecalculator.ui.sections.SectionBuilder
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.Lce
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,13 +130,14 @@ fun ColumnScope.currencySection(
                     .onStart { emit(toCurrency) }
 
                 LaunchedEffect(fromCurrency, toCurrency) {
-                    newFromCurrency
-                        .combine(newToCurrency) { f1, f2 -> f1 to f2 }
-                        .collect { (newFromCurrency, newToCurrency) ->
-                            if (newFromCurrency != fromCurrency || newToCurrency != toCurrency) {
-                                store.currencies[sectionId] = newFromCurrency to newToCurrency
+                    store.currencies.put(
+                        sectionId,
+                        newFromCurrency
+                            .combine(newToCurrency) { f1, f2 -> f1 to f2 }
+                            .filter { (newFromCurrency, newToCurrency) ->
+                                newFromCurrency != fromCurrency || newToCurrency != toCurrency
                             }
-                        }
+                    )
                 }
 
                 val sinceStr = remember(rateUIModel) {
@@ -151,6 +153,9 @@ fun ColumnScope.currencySection(
                 )
             }
         },
-        multiplier = Multiplier.ExchangeRate(sectionId),
+        getMultiplier = {
+            exchangeRates[sectionId]
+                .map { it?.rate }
+        },
     )
 }

@@ -39,7 +39,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.onEach
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,10 +130,8 @@ fun ColumnScope.ResultsSection(
     }
 
     LaunchedEffect(key1 = Unit) {
-        val newMoneyPerWeek = merge(
-            baseOutput.onEach {
-                println(it)
-            },
+        val reverseMoneyPerWeek = merge(
+            baseOutput,
             timeOffOutput,
             currency1Output
                 .combine(
@@ -181,11 +178,12 @@ fun ColumnScope.ResultsSection(
                     }
                 }
         )
-            .distinctUntilChanged()
 
-        newMoneyPerWeek.collect {
-            store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] = it
-        }
+        store.registry.put(
+            "$SECTION_BASE:$MONEY_PER_WEEK",
+            reverseMoneyPerWeek
+                .distinctUntilChanged()
+        )
     }
 }
 

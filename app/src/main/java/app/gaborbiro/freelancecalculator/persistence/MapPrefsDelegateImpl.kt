@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
@@ -60,6 +61,14 @@ class MapPrefsDelegateImpl<T, S>(
                 } ?: run {
                     prefs.remove(key)
                 }
+            }
+        }
+    }
+
+    override fun put(subKey: String, value: Flow<T?>) {
+        scope.launch {
+            value.collectLatest {
+                set(subKey, it)
             }
         }
     }

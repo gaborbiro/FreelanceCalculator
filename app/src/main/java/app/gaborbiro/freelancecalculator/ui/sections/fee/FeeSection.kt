@@ -11,7 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
-import app.gaborbiro.freelancecalculator.ui.sections.Multiplier
 import app.gaborbiro.freelancecalculator.ui.sections.SectionBuilder
 import app.gaborbiro.freelancecalculator.ui.view.focusPinnedInputField
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
@@ -52,18 +51,19 @@ fun ColumnScope.feeSection(
                 clearButtonVisible = true,
             )
                 .map { it?.chainify() }
+
             LaunchedEffect(Unit) {
-                newFee
-                    .collect {
-                        store.registry["${sectionId}:${TYPE_FEE}"] = it
-                    }
+                store.registry.put("${sectionId}:${TYPE_FEE}", newFee)
             }
         },
-        multiplier = Multiplier.Fee("$sectionId:$TYPE_FEE"),
+        getMultiplier = {
+            registry["$sectionId:$TYPE_FEE"]
+                .map(ArithmeticChain?::toFeeMultiplier)
+        }
     )
 }
 
-fun ArithmeticChain?.toFeeMultiplier() = resolve()
+fun ArithmeticChain?.toFeeMultiplier(): Double = resolve()
     ?.toDouble()
     ?.let { 1.0 - (it / 100.0) }
     ?: 1.0
