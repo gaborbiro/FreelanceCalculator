@@ -29,12 +29,12 @@ android {
             storeFile = file("signing/debug_keystore.jks")
             storePassword = "keystore"
         }
-//        create("release") {
-//            keyAlias = "release"
-//            keyPassword = "my release key password"
-//            storeFile = file("/home/miles/keystore.jks")
-//            storePassword = "my keystore password"
-//        }
+        create("release") {
+            keyAlias = "debug"
+            keyPassword = "keystore"
+            storeFile = file("signing/debug_keystore.jks")
+            storePassword = "keystore"
+        }
     }
     buildTypes {
         release {
@@ -43,6 +43,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
         }
