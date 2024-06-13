@@ -44,11 +44,11 @@ jobs:
         run: ./gradlew assembleGitAction --stacktrace
 
       - name: Get apk path
-        id: apkPath
+        id: releaseApk
         run: echo "apkfile=$(find app/build/outputs/apk/gitAction/release/*.apk)" >> $GITHUB_OUTPUT
 
       - name: Upload Build to Artifacts
         uses: actions/upload-artifact@v4
         with:
            name: debug-artifacts
-           path: ${{ steps.debugApk.outputs.apkPath }}
+           path: ${{ steps.debugApk.outputs.releaseApk }}
