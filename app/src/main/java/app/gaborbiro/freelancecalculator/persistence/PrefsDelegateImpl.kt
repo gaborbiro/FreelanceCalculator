@@ -45,7 +45,7 @@ class PrefsDelegateImpl<T, S>(
     override operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Flow<T?>) {
         job?.cancel()
         job = scope.launch {
-            value.cancellable().collectLatest { latest ->
+            value.cancellable().collect { latest ->
                 prefs.edit { pref ->
                     if (latest != null) {
                         pref[key] = mapper

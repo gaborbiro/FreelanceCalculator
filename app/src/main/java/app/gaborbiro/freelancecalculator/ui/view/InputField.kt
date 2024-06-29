@@ -1,5 +1,7 @@
 package app.gaborbiro.freelancecalculator.ui.view
 
+import androidx.compose.animation.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
@@ -17,8 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -66,6 +70,11 @@ fun InputField(
             cursorBrush = SolidColor(LocalContentColor.current),
         ) {
             if (outlined) {
+                val color = remember { Animatable(Color.Gray) }
+                LaunchedEffect(value) {
+                    color.animateTo(Color.Red, animationSpec = tween(300))
+                    color.animateTo(Color.Transparent, animationSpec = tween(300))
+                }
                 OutlineDecorationBox(
                     value = value,
                     label = label,

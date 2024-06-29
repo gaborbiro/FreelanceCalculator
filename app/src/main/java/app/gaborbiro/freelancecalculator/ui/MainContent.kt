@@ -47,7 +47,7 @@ fun CalculatorContent(
     store: Store,
     currencyRepository: CurrencyRepository,
 ) {
-    val selectedIndex: Int? by store.selectedIndex.collectAsState(initial = null)
+    val selectedIndex: Int = store.selectedIndex.collectAsState(initial = null).value ?: 2
     var indexCounter = -1
 
     fun selectionUpdater(indexCounter: Int): () -> Unit = {

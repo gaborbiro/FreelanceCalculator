@@ -24,6 +24,7 @@ import app.gaborbiro.freelancecalculator.ui.sections.SectionBuilder
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.Lce
+import io.reactivex.Observable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
@@ -60,10 +61,14 @@ fun ColumnScope.currencySection(
             .value ?: rateUIModel
 
         val rateResult = remember(fromCurrency, toCurrency) {
-            currencyRepository.getRate(
-                fromCurrency,
-                toCurrency
-            )
+            if (fromCurrency != toCurrency) {
+                currencyRepository.getRate(
+                    fromCurrency,
+                    toCurrency
+                )
+            } else {
+                Observable.just(Lce.Data(CurrencyRepository.ExchangeRate(rate = 1.0, since = "")))
+            }
         }
             .subscribeAsState(Lce.Loading).value
 
@@ -91,11 +96,6 @@ fun ColumnScope.currencySection(
                             error = true
                         )
                     }
-//                    Toast.makeText(
-//                        LocalContext.current,
-//                        rateResult.throwable.message,
-//                        Toast.LENGTH_SHORT
-//                    ).show()
                 }
             }
         }

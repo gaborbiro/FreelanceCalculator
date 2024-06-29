@@ -65,19 +65,19 @@ fun ColumnScope.ResultsSection(
         moneyPerWeek = baseMoneyPerWeek.value,
     )
 
-    val timeOffOutput = feeSection(
-        inputId = SECTION_BASE,
-        sectionId = SECTION_TIMEOFF,
-        title = "Time off",
-        store = store,
-    )
-
     val currency1Output = currencySection(
-        inputId = SECTION_TIMEOFF,
+        inputId = SECTION_BASE,
         sectionId = SECTION_CURRENCY1,
         title = "Currency",
         store = store,
         currencyRepository = currencyRepository,
+    )
+
+    val timeOffOutput = feeSection(
+        inputId = SECTION_CURRENCY1,
+        sectionId = SECTION_TIMEOFF,
+        title = "Time off",
+        store = store,
     )
 
     val selectedCurrency by store.currencies[SECTION_CURRENCY1]
@@ -86,7 +86,7 @@ fun ColumnScope.ResultsSection(
 
     val ptTaxOutput = if (fromCurrency != null && toCurrency == "EUR") {
         feeSection(
-            inputId = SECTION_CURRENCY1,
+            inputId = SECTION_TIMEOFF,
             sectionId = "$SECTION_PT/$SUB_SECTION_TAX",
             title = "After tax (PT '24)",
             store = store,
@@ -109,7 +109,7 @@ fun ColumnScope.ResultsSection(
 
     val ukTaxOutput = if (fromCurrency != null && toCurrency == "GBP") {
         ukTaxSection(
-            inputId = SECTION_CURRENCY1,
+            inputId = SECTION_TIMEOFF,
             sectionId = "$SECTION_UK/$SUB_SECTION_TAX",
             store = store,
         )
@@ -129,7 +129,7 @@ fun ColumnScope.ResultsSection(
         emptyFlow()
     }
 
-    LaunchedEffect(key1 = Unit) {
+    LaunchedEffect(Unit) {
         val reverseMoneyPerWeek = merge(
             baseOutput,
             timeOffOutput,

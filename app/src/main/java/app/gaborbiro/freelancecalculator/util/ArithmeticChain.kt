@@ -1,5 +1,6 @@
 package app.gaborbiro.freelancecalculator.util
 
+import androidx.annotation.Keep
 import app.gaborbiro.freelancecalculator.util.hide.safelyCalculate1
 import app.gaborbiro.freelancecalculator.util.hide.safelyCalculate2
 import java.math.BigDecimal
@@ -12,6 +13,7 @@ import java.math.RoundingMode
  * Using * or / signs is supported (with doubles or other [ArithmeticChain]s), but parentheses have no effect.
  * [ArithmeticChain]s are simply concatenated.
  */
+@Keep
 class ArithmeticChain private constructor(private val operands: List<Operand>) {
 
     constructor(number: Double) : this(listOf(Operand(number, inverse = false)))

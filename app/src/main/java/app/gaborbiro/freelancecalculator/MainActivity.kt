@@ -13,6 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import app.gaborbiro.freelancecalculator.data.currency.CurrencyDataSourceImpl
 import app.gaborbiro.freelancecalculator.persistence.StoreImpl
@@ -22,8 +23,6 @@ import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.CalculatorContent
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 
 @ExperimentalMaterial3Api
 class MainActivity : ComponentActivity() {
@@ -31,6 +30,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val scope = rememberCoroutineScope()
+
             FreelanceCalculatorTheme(dynamicColor = false) {
                 Surface(
                     modifier = Modifier
@@ -38,7 +39,10 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.surface
                 ) {
                     val store: Store = remember {
-                        StoreImpl(this@MainActivity, CoroutineScope(Dispatchers.IO))
+                        StoreImpl(
+                            this@MainActivity,
+                            scope
+                        )
                     }
                     val currencyRepository: CurrencyRepository = remember {
                         CurrencyRepositoryImpl(CurrencyDataSourceImpl(applicationContext))

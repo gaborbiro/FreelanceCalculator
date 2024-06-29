@@ -52,7 +52,7 @@ fun ColumnScope.feeSection(
             )
                 .map { it?.chainify() }
 
-            LaunchedEffect(Unit) {
+            LaunchedEffect(newFee) {
                 store.registry.put("${sectionId}:${TYPE_FEE}", newFee)
             }
         },
