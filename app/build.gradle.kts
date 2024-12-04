@@ -56,7 +56,7 @@ android {
     productFlavors {
         create("local") {
             setDimension("environment")
-            val rapidApiKey = gradleLocalProperties(rootDir).getProperty("RAPIDAPI_API_KEY") ?: "missing rapidapk key"
+            val rapidApiKey = gradleLocalProperties(rootDir, providers).getProperty("RAPIDAPI_API_KEY") ?: "missing rapidapk key"
             buildConfigField("String", "RAPIDAPI_API_KEY", rapidApiKey)
         }
         create("gitAction") {
@@ -77,7 +77,7 @@ android {
         buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.3"
+        kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
         resources {
@@ -87,16 +87,16 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.activity:activity-compose:1.9.0")
-    implementation(platform("androidx.compose:compose-bom:2023.03.00"))
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    implementation("androidx.activity:activity-compose:1.9.1")
+    implementation(platform("androidx.compose:compose-bom:2024.08.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.runtime:runtime-rxjava2:1.6.6")
-    implementation("androidx.datastore:datastore-preferences:1.1.0")
+    implementation("androidx.compose.runtime:runtime-rxjava2:1.6.8")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.11")
     implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.11")
     implementation("io.reactivex.rxjava2:rxjava:2.2.21")

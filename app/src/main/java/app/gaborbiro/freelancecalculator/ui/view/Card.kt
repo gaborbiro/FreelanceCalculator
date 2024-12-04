@@ -77,8 +77,7 @@ private fun CardPreview() {
                 label = "Input Field Label",
                 value = "123.45",
                 outlined = true,
-                onValueChange = { },
-            )
+            ) {}
             Spacer(modifier = Modifier.width(16.dp))
             RadioButton(
                 modifier = Modifier

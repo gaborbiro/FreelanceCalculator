@@ -7,10 +7,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -32,6 +31,8 @@ class MapPrefsDelegateImpl<T, S>(
     private val mapper: Mapper<T, S>? = null,
 ) : MapPrefsDelegate<T> {
 
+    private var job: Job? = null
+
     private val keyCache: LruCache<String, Preferences.Key<S>> =
         object : LruCache<String, Preferences.Key<S>>(100) {
 
@@ -47,28 +48,30 @@ class MapPrefsDelegateImpl<T, S>(
             mapper
                 ?.fromStoreType(value)
                 ?: value as T?
-        }.distinctUntilChanged()
-    }
-
-    override operator fun set(subKey: String, value: T?) {
-        scope.launch {
-            val key = keyCache["${key}_${subKey}"]!!
-            prefs.edit { prefs: MutablePreferences ->
-                value?.let {
-                    prefs[key] = mapper
-                        ?.toStoreType(it)
-                        ?: it as S
-                } ?: run {
-                    prefs.remove(key)
-                }
-            }
         }
     }
 
-    override fun put(subKey: String, value: Flow<T?>) {
-        scope.launch {
-            value.collectLatest {
-                set(subKey, it)
+    /**
+     * Stops previous flows being read (if any)
+     */
+    override operator fun set(subKey: String, value: Flow<T?>) {
+        val key = keyCache["${key}_${subKey}"]!!
+        println("$key <- $value")
+        job?.cancel()
+        job = scope.launch {
+            value.cancellable().collect { latest ->
+                prefs.edit { prefs: MutablePreferences ->
+                    latest?.let {
+                        val mapped = mapper
+                            ?.toStoreType(latest)
+                            ?: it as S
+                        if (prefs[key] != mapped) {
+                            prefs[key] = mapped
+                        }
+                    } ?: run {
+                        prefs.remove(key)
+                    }
+                }
             }
         }
     }

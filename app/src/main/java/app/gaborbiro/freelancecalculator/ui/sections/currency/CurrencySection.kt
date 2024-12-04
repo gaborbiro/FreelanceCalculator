@@ -28,6 +28,7 @@ import io.reactivex.Observable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 
@@ -41,7 +42,7 @@ fun ColumnScope.currencySection(
     store: Store,
     currencyRepository: CurrencyRepository,
 ): Flow<ArithmeticChain?> {
-    val selectedCurrencies by store.currencies[sectionId]
+    val selectedCurrencies by store.currencySelections[sectionId]
         .collectAsState(initial = null)
     val (fromCurrency, toCurrency) = selectedCurrencies ?: (null to null)
 
@@ -87,7 +88,7 @@ fun ColumnScope.currencySection(
                         since = "Refreshed at:\n${rateResult.data.since}",
                         error = false,
                     )
-                    store.exchangeRates[sectionId] = rateUIModel
+                    store.exchangeRates[sectionId] = flowOf(rateUIModel)
                 }
 
                 is Lce.Error -> {
@@ -130,14 +131,11 @@ fun ColumnScope.currencySection(
                     .onStart { emit(toCurrency) }
 
                 LaunchedEffect(fromCurrency, toCurrency) {
-                    store.currencies.put(
-                        sectionId,
-                        newFromCurrency
-                            .combine(newToCurrency) { f1, f2 -> f1 to f2 }
+                    store.currencySelections[sectionId] =
+                        combine(newFromCurrency, newToCurrency) { f1, f2 -> f1 to f2 }
                             .filter { (newFromCurrency, newToCurrency) ->
                                 newFromCurrency != fromCurrency || newToCurrency != toCurrency
                             }
-                    )
                 }
 
                 val sinceStr = remember(rateUIModel) {
@@ -155,7 +153,9 @@ fun ColumnScope.currencySection(
         },
         getMultiplier = {
             exchangeRates[sectionId]
-                .map { it?.rate }
+                .map {
+                    it?.rate
+                }
         },
     )
 }

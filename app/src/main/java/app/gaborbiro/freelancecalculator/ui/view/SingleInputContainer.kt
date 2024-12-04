@@ -9,9 +9,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.emitAll
 
 
 @ExperimentalMaterial3Api
@@ -24,7 +24,12 @@ fun singleInputContainer(
     selected: Boolean,
     onSelected: () -> Unit,
 ): Flow<Double?> {
-    val output = remember { MutableSharedFlow<Double?>(extraBufferCapacity = 1) }
+    val output: MutableSharedFlow<Double?> = remember(label) {
+        MutableSharedFlow(
+            replay = 1,
+            onBufferOverflow = BufferOverflow.SUSPEND
+        )
+    }
 
     SelectableContainer(
         modifier = containerModifier,
@@ -38,8 +43,10 @@ fun singleInputContainer(
             outlined = true,
             clearButtonVisible = clearButtonVisible,
         )
-        LaunchedEffect(inputFieldOutput) {
-            output.emitAll(inputFieldOutput)
+        LaunchedEffect(Unit) {
+            inputFieldOutput.collect {
+                output.tryEmit(it)
+            }
         }
     }
     return output

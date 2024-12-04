@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -52,9 +51,7 @@ fun ColumnScope.feeSection(
             )
                 .map { it?.chainify() }
 
-            LaunchedEffect(newFee) {
-                store.registry.put("${sectionId}:${TYPE_FEE}", newFee)
-            }
+            store.registry["$sectionId:$TYPE_FEE"] = newFee
         },
         getMultiplier = {
             registry["$sectionId:$TYPE_FEE"]

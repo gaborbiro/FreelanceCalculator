@@ -18,6 +18,7 @@ val WEEKS_PER_MONTH = ArithmeticChain(DAYS_PER_YEAR) / 7.0 / 12.0 // 4.35
 private val locale = Locale.getDefault()
 private val parsingFormat = (NumberFormat.getNumberInstance(locale) as DecimalFormat).also {
     it.isParseBigDecimal = false
+    it.isGroupingUsed = true
 }
 
 fun BigDecimal?.format(decimalCount: Int): String {
@@ -89,7 +90,7 @@ private fun DecimalFormat.strictParse(text: String): Double? = runCatching {
     val parsePosition = ParsePosition(0)
     val result = parsingFormat.parse(text, parsePosition)
     if (parsePosition.index != text.length) {
-        null// not all of the text was consumed, there's some illegal character
+        null // not all of the text was consumed, there's some illegal character
     } else {
         result.toDouble()
     }

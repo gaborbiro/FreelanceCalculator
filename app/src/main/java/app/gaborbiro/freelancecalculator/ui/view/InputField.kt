@@ -22,7 +22,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -34,7 +33,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
-import app.gaborbiro.freelancecalculator.ui.theme.PADDING_MEDIUM
 
 @ExperimentalMaterial3Api
 @Composable
@@ -45,7 +43,7 @@ fun InputField(
     outlined: Boolean,
     clearButtonVisible: Boolean = false,
     onFocusChanged: ((isFocused: Boolean) -> Unit)? = null,
-    onValueChange: (value: String) -> Unit,
+    onValueChanged: (String) -> Unit,
 ) {
     val customTextSelectionColors = TextSelectionColors(
         handleColor = Color.Transparent,
@@ -64,7 +62,7 @@ fun InputField(
             singleLine = true,
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Decimal),
             onValueChange = {
-                onValueChange(it.text)
+                onValueChanged(it.text)
             },
             visualTransformation = DecimalGroupingDecorator(),
             cursorBrush = SolidColor(LocalContentColor.current),
@@ -80,7 +78,7 @@ fun InputField(
                     label = label,
                     innerTextField = it,
                     clearButtonVisible = clearButtonVisible,
-                    onValueChange = onValueChange,
+                    onCleared = { onValueChanged("") },
                 )
             } else {
                 UnderlineDecorationBox(
@@ -88,7 +86,7 @@ fun InputField(
                     label = label,
                     innerTextField = it,
                     clearButtonVisible = clearButtonVisible,
-                    onValueChange = onValueChange,
+                    onCleared = { onValueChanged("") },
                 )
             }
         }
@@ -102,7 +100,7 @@ private fun OutlineDecorationBox(
     label: String,
     innerTextField: @Composable () -> Unit,
     clearButtonVisible: Boolean,
-    onValueChange: (value: String) -> Unit,
+    onCleared: () -> Unit,
 ) {
     return TextFieldDefaults.OutlinedTextFieldDecorationBox(
         value = value,
@@ -121,7 +119,7 @@ private fun OutlineDecorationBox(
             {
                 IconButton(
                     onClick = {
-                        onValueChange("")
+                        onCleared()
                     },
                 ) {
                     Icon(
@@ -141,7 +139,7 @@ private fun UnderlineDecorationBox(
     label: String,
     innerTextField: @Composable () -> Unit,
     clearButtonVisible: Boolean,
-    onValueChange: (value: String) -> Unit,
+    onCleared: () -> Unit,
 ) {
     return TextFieldDefaults.TextFieldDecorationBox(
         value = value,
@@ -162,7 +160,7 @@ private fun UnderlineDecorationBox(
             {
                 IconButton(
                     onClick = {
-                        onValueChange("")
+                        onCleared()
                     },
                 ) {
                     Icon(
@@ -185,14 +183,12 @@ private fun InputFieldPreview() {
         value = "123.1453",
         outlined = true,
         onFocusChanged = { },
-        onValueChange = { },
-    )
+    ) {}
     InputField(
         modifier = Modifier,
         label = "Input Field Label",
         value = "123.1453",
         outlined = false,
         onFocusChanged = { },
-        onValueChange = { },
-    )
+    ) {}
 }

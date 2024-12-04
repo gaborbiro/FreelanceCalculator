@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.util.Lce
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -62,7 +63,10 @@ fun currencySelector(
     selectedCurrency: String?,
     currencyRepository: CurrencyRepository,
 ): Flow<String?> {
-    val output = remember { MutableSharedFlow<String?>(extraBufferCapacity = 1) }
+    val output = remember(label) { MutableSharedFlow<String?>(
+        replay = 1,
+        onBufferOverflow = BufferOverflow.SUSPEND
+    ) }
 
     var expanded by remember {
         mutableStateOf(false)
@@ -233,7 +237,7 @@ fun currencySelector(
                                     currentText = TextFieldValue(currency)
                                     scope.launch {
                                         delay(200)
-                                        println(output.tryEmit(currency))
+                                        output.tryEmit(currency)
                                         filter = null
                                     }
                                 },

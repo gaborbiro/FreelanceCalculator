@@ -65,24 +65,21 @@ private fun FlowCardPreview() {
                 value = "123.45",
                 outlined = true,
                 clearButtonVisible = false,
-                onValueChange = { },
-            )
+            ) {}
             InputField(
                 modifier = Modifier,
                 label = "Input Field",
                 value = "123.45",
                 outlined = true,
                 clearButtonVisible = false,
-                onValueChange = { },
-            )
+            ) {}
             InputField(
                 modifier = Modifier,
                 label = "Input Field Looooooonger",
                 value = "123.45",
                 outlined = true,
                 clearButtonVisible = false,
-                onValueChange = { },
-            )
+            ) {}
         }
     }
 }

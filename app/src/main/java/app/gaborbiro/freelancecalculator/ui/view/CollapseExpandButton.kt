@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun CollapseExpandButton(
@@ -36,7 +37,7 @@ fun CollapseExpandButton(
             Icon(
                 modifier = iconModifier
                     .clickable {
-                        sectionExpander[collapseId] = false
+                        sectionExpander[collapseId] = flowOf(false)
                     },
                 imageVector = Icons.Outlined.KeyboardArrowUp,
                 contentDescription = "collapse",
@@ -45,7 +46,7 @@ fun CollapseExpandButton(
             Icon(
                 modifier = iconModifier
                     .clickable {
-                        sectionExpander[collapseId] = true
+                        sectionExpander[collapseId] = flowOf(true)
                     },
                 imageVector = Icons.Outlined.KeyboardArrowDown,
                 contentDescription = "expand",

@@ -17,7 +17,7 @@ internal open class StoreImpl(context: Context, scope: CoroutineScope) : StoreBa
 
     override val sectionExpander = booleanMapPrefsDelegate("SECTION_EXPANDED")
 
-    override val currencies: MapPrefsDelegate<Pair<String?, String?>> =
+    override val currencySelections: MapPrefsDelegate<Pair<String?, String?>> =
         gsonSerializableMapPrefsDelegate("CURRENCIES")
 
     override val exchangeRates: MapPrefsDelegate<ExchangeRateUIModel> =

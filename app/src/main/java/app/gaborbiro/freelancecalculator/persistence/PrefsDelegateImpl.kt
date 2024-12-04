@@ -42,6 +42,9 @@ class PrefsDelegateImpl<T, S>(
         }.distinctUntilChanged()
     }
 
+    /**
+     * Stops previous flows being read (if any)
+     */
     override operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Flow<T?>) {
         job?.cancel()
         job = scope.launch {

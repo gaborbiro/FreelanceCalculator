@@ -26,7 +26,7 @@ class CurrencyDataSourceImpl(private val appContext: Context) : CurrencyDataSour
     private val client: OkHttpClient by lazy {
         val builder = OkHttpClient.Builder()
         val logger = HttpLoggingInterceptor()
-        logger.level = HttpLoggingInterceptor.Level.BODY
+        logger.level = HttpLoggingInterceptor.Level.HEADERS
         builder.addInterceptor(logger)
         val cacheSize = (5 * 1024 * 1024).toLong() // 5MB
         builder.cache(Cache(appContext.cacheDir, cacheSize))
@@ -98,7 +98,7 @@ class CurrencyDataSourceImpl(private val appContext: Context) : CurrencyDataSour
             }
         }
             .doOnError {
-                println(it)
+                it.printStackTrace()
             }
             .retryWhen(RetryWith { error, retryCount ->
                 val isTooManyRequestsError = (error as? CurrencyConverterError)?.code == 429

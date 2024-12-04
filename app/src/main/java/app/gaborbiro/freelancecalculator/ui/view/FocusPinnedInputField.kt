@@ -41,9 +41,9 @@ fun focusPinnedInputField(
         },
     ) {
         previousValue = it
-        val number = it.strictParse()
+        val number = it.replace(",", "").strictParse()
         if (number != 0.0) {
-            if (value.strictParse() != number) {
+            if (value.replace(",", "").strictParse() != number) {
                 output.tryEmit(number)
             }
         } else {

@@ -14,7 +14,7 @@ interface Store {
 
     val sectionExpander: MapPrefsDelegate<Boolean>
 
-    val currencies: MapPrefsDelegate<Pair<String?, String?>>
+    val currencySelections: MapPrefsDelegate<Pair<String?, String?>>
 
     val exchangeRates: MapPrefsDelegate<ExchangeRateUIModel>
 
@@ -29,7 +29,7 @@ interface Store {
             override var daysPerWeek: Flow<Double?> = flowOf(daysPerWeek)
             override val sectionExpander: MapPrefsDelegate<Boolean> =
                 MapPrefsDelegate.dummyImplementation()
-            override val currencies: MapPrefsDelegate<Pair<String?, String?>> =
+            override val currencySelections: MapPrefsDelegate<Pair<String?, String?>> =
                 MapPrefsDelegate.dummyImplementation()
             override val exchangeRates: MapPrefsDelegate<ExchangeRateUIModel> =
                 MapPrefsDelegate.dummyImplementation()
