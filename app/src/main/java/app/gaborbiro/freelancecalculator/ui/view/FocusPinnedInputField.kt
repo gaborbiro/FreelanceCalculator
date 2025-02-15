@@ -16,20 +16,19 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @ExperimentalMaterial3Api
 @Composable
-fun focusPinnedInputField(
+fun FocusPinnedInputField(
     modifier: Modifier,
     label: String,
     value: String,
     outlined: Boolean,
     clearButtonVisible: Boolean = false,
-): Flow<Double?> {
+    onValueChanged: (Double?) -> Unit,
+) {
     var isFocused by rememberSaveable { mutableStateOf(false) }
     var previousValue: String by rememberSaveable { mutableStateOf("") }
     var value by rememberSaveable(value) {
         mutableStateOf(if (isFocused) previousValue else value)
     }
-    val output = remember { MutableSharedFlow<Double?>(extraBufferCapacity = 1) }
-
     InputField(
         modifier = modifier,
         label = label,
@@ -44,15 +43,11 @@ fun focusPinnedInputField(
         val number = it.replace(",", "").strictParse()
         if (number != 0.0) {
             if (value.replace(",", "").strictParse() != number) {
-                output.tryEmit(number)
+                onValueChanged(number)
             }
         } else {
-            output.tryEmit(null)
+            onValueChanged(null)
         }
         value = it
-    }
-    return remember {
-        output
-            .debounce(300.milliseconds)
     }
 }

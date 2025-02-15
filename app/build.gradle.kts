@@ -51,16 +51,16 @@ android {
         }
     }
 
-    flavorDimensions("environment")
+    flavorDimensions.add("environment")
 
     productFlavors {
         create("local") {
-            setDimension("environment")
+            dimension = "environment"
             val rapidApiKey = gradleLocalProperties(rootDir, providers).getProperty("RAPIDAPI_API_KEY") ?: "missing rapidapk key"
             buildConfigField("String", "RAPIDAPI_API_KEY", rapidApiKey)
         }
         create("gitAction") {
-            setDimension("environment")
+            dimension = "environment"
             val rapidApiKey = System.getenv("RAPIDAPI_API_KEY") ?: "missing rapidapk key"
             buildConfigField("String", "RAPIDAPI_API_KEY", "\"$rapidApiKey\"")
         }

@@ -11,7 +11,7 @@ interface MapPrefsDelegate<T> {
     /**
      * Stops previous flows being read (if any)
      */
-    operator fun set(subKey: String, value: Flow<T?>)
+    operator fun set(subKey: String, value: T?)
 
     companion object {
         fun <T> dummyImplementation(value: Map<String, T> = emptyMap()): MapPrefsDelegate<T> {
@@ -20,7 +20,7 @@ interface MapPrefsDelegate<T> {
                     return flowOf(value[subKey])
                 }
 
-                override fun set(subKey: String, value: Flow<T?>) {
+                override fun set(subKey: String, value: T?) {
                 }
             }
         }

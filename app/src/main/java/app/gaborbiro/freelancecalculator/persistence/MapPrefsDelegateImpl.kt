@@ -7,9 +7,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.cancellable
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -31,8 +30,6 @@ class MapPrefsDelegateImpl<T, S>(
     private val mapper: Mapper<T, S>? = null,
 ) : MapPrefsDelegate<T> {
 
-    private var job: Job? = null
-
     private val keyCache: LruCache<String, Preferences.Key<S>> =
         object : LruCache<String, Preferences.Key<S>>(100) {
 
@@ -43,34 +40,37 @@ class MapPrefsDelegateImpl<T, S>(
 
     override operator fun get(subKey: String): Flow<T?> {
         val key = keyCache["${key}_${subKey}"]!!
-        return prefs.data.map { prefs ->
-            val value: S? = prefs[key]
-            mapper
-                ?.fromStoreType(value)
-                ?: value as T?
-        }
+        return prefs.data
+            .map { prefs ->
+                prefs[key]
+            }
+            .map {
+                val value = mapper
+                    ?.fromStoreType(it)
+                    ?: it as T?
+                println("$key -> $value")
+                value
+            }
+            .distinctUntilChanged()
     }
 
     /**
      * Stops previous flows being read (if any)
      */
-    override operator fun set(subKey: String, value: Flow<T?>) {
+    override operator fun set(subKey: String, value: T?) {
         val key = keyCache["${key}_${subKey}"]!!
         println("$key <- $value")
-        job?.cancel()
-        job = scope.launch {
-            value.cancellable().collect { latest ->
-                prefs.edit { prefs: MutablePreferences ->
-                    latest?.let {
-                        val mapped = mapper
-                            ?.toStoreType(latest)
-                            ?: it as S
-                        if (prefs[key] != mapped) {
-                            prefs[key] = mapped
-                        }
-                    } ?: run {
-                        prefs.remove(key)
+        scope.launch {
+            prefs.edit { prefs: MutablePreferences ->
+                value?.let {
+                    val mapped = mapper
+                        ?.toStoreType(value)
+                        ?: it as S
+                    if (prefs[key] != mapped) {
+                        prefs[key] = mapped
                     }
+                } ?: run {
+                    prefs.remove(key)
                 }
             }
         }

@@ -25,25 +25,26 @@ import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.Lce
 import io.reactivex.Observable
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FlowOperatorInvokedInComposition")
 @Composable
-fun ColumnScope.currencySection(
+fun ColumnScope.CurrencySection(
     inputId: String,
     sectionId: String,
     title: String,
     store: Store,
     currencyRepository: CurrencyRepository,
-): Flow<ArithmeticChain?> {
-    val selectedCurrencies by store.currencySelections[sectionId]
-        .collectAsState(initial = null)
+    onPerWeekValueChanged: (ArithmeticChain?) -> Unit,
+) {
+    val selectedCurrencies by remember {
+        store.currencySelections[sectionId]
+    }.collectAsState(initial = null)
+
     val (fromCurrency, toCurrency) = selectedCurrencies ?: (null to null)
 
     var rateUIModel: ExchangeRateUIModel by remember {
@@ -57,7 +58,9 @@ fun ColumnScope.currencySection(
     }
 
     if (fromCurrency != null && toCurrency != null) {
-        rateUIModel = store.exchangeRates[sectionId]
+        rateUIModel = remember {
+            store.exchangeRates[sectionId]
+        }
             .collectAsState(initial = null)
             .value ?: rateUIModel
 
@@ -88,7 +91,7 @@ fun ColumnScope.currencySection(
                         since = "Refreshed at:\n${rateResult.data.since}",
                         error = false,
                     )
-                    store.exchangeRates[sectionId] = flowOf(rateUIModel)
+                    store.exchangeRates[sectionId] = rateUIModel
                 }
 
                 is Lce.Error -> {
@@ -106,7 +109,7 @@ fun ColumnScope.currencySection(
         SectionBuilder(inputId, sectionId, title, store)
     }
 
-    return builder.section(
+    builder.Section(
         this,
         extraContent = {
             Row {
@@ -131,11 +134,13 @@ fun ColumnScope.currencySection(
                     .onStart { emit(toCurrency) }
 
                 LaunchedEffect(fromCurrency, toCurrency) {
-                    store.currencySelections[sectionId] =
-                        combine(newFromCurrency, newToCurrency) { f1, f2 -> f1 to f2 }
-                            .filter { (newFromCurrency, newToCurrency) ->
-                                newFromCurrency != fromCurrency || newToCurrency != toCurrency
-                            }
+                    combine(newFromCurrency, newToCurrency) { f1, f2 -> f1 to f2 }
+                        .filter { (newFromCurrency, newToCurrency) ->
+                            newFromCurrency != fromCurrency || newToCurrency != toCurrency
+                        }
+                        .collect {
+                            store.currencySelections[sectionId] = it
+                        }
                 }
 
                 val sinceStr = remember(rateUIModel) {
@@ -157,5 +162,6 @@ fun ColumnScope.currencySection(
                     it?.rate
                 }
         },
+        onPerWeekValueChanged = onPerWeekValueChanged,
     )
 }

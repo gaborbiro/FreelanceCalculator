@@ -11,26 +11,26 @@ import androidx.compose.ui.Modifier
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
 import app.gaborbiro.freelancecalculator.ui.sections.SectionBuilder
-import app.gaborbiro.freelancecalculator.ui.view.focusPinnedInputField
+import app.gaborbiro.freelancecalculator.ui.view.FocusPinnedInputField
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.resolve
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("FlowOperatorInvokedInComposition")
 @Composable
-fun ColumnScope.feeSection(
+fun ColumnScope.FeeSection(
     inputId: String,
     sectionId: String,
     title: String,
     store: Store,
-): Flow<ArithmeticChain?> {
-    val fee by store
-        .registry["$sectionId:$TYPE_FEE"]
-        .collectAsState(initial = null)
+    onPerWeekValueChanged: (ArithmeticChain?) -> Unit,
+) {
+    val fee by remember {
+        store.registry["$sectionId:$TYPE_FEE"]
+    }.collectAsState(initial = null)
 
     val feeStr = remember(fee) { fee.resolve().format(decimalCount = 2) }
 
@@ -38,25 +38,25 @@ fun ColumnScope.feeSection(
         SectionBuilder(inputId, sectionId, title, store)
     }
 
-    return builder.section(
+    builder.Section(
         this,
         extraContent = {
-            val newFee = focusPinnedInputField(
+            FocusPinnedInputField(
                 modifier = Modifier
                     .wrapContentSize(),
                 label = "%",
                 value = feeStr,
                 outlined = false,
                 clearButtonVisible = true,
-            )
-                .map { it?.chainify() }
-
-            store.registry["$sectionId:$TYPE_FEE"] = newFee
+            ) { newFee ->
+                store.registry["$sectionId:$TYPE_FEE"] = newFee?.chainify()
+            }
         },
         getMultiplier = {
             registry["$sectionId:$TYPE_FEE"]
                 .map(ArithmeticChain?::toFeeMultiplier)
-        }
+        },
+        onPerWeekValueChanged = onPerWeekValueChanged,
     )
 }
 

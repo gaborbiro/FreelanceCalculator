@@ -30,7 +30,7 @@ import app.gaborbiro.freelancecalculator.ui.sections.ResultsGroup
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
-import app.gaborbiro.freelancecalculator.ui.view.singleInputContainer
+import app.gaborbiro.freelancecalculator.ui.view.SingleInputContainer
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
@@ -38,11 +38,11 @@ import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.resolve
 import app.gaborbiro.freelancecalculator.util.simplify
 import app.gaborbiro.freelancecalculator.util.times
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 
 @SuppressLint("FlowOperatorInvokedInComposition")
@@ -51,104 +51,99 @@ fun CalculatorContent(
     store: Store,
     currencyRepository: CurrencyRepository,
 ) {
-    val selectedIndex: Int = store.selectedIndex.collectAsState(initial = null).value ?: 2
-    var indexCounter = -1
-
-    fun selectionUpdater(indexCounter: Int): () -> Unit = {
-        store.selectedIndex = flowOf(indexCounter)
-    }
-
-    val selectableContainerModifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = PADDING_LARGE)
-
-    val feePerHour: ArithmeticChain? by store
-        .registry["${SECTION_BASE}:${FEE_PER_HOUR}"]
-        .collectAsState(initial = null)
-
-    val hoursPerWeek: ArithmeticChain? by store
-        .registry["${SECTION_BASE}:${HOURS_PER_WEEK}"]
-        .collectAsState(initial = null)
+    val selectedIndex by remember { store.selectedIndex }.collectAsState(initial = 2)
+    var directionJob: Job? = null
 
     LaunchedEffect(selectedIndex) {
-        val reverseFlow = when (selectedIndex) {
-            0 -> {
-                combine(
-                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"].drop(1),
-                    store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"].drop(1),
-                ) { moneyPerWeek, hoursPerWeek ->
-                    moneyPerWeek / hoursPerWeek
+        directionJob?.cancel()
+        directionJob = launch {
+            when (selectedIndex) {
+                0 -> {
+                    combine(
+                        store.registry["$SECTION_BASE:$MONEY_PER_WEEK"],
+                        store.registry["$SECTION_BASE:$HOURS_PER_WEEK"],
+                    ) { moneyPerWeek, hoursPerWeek ->
+                        moneyPerWeek / hoursPerWeek
+                    }
+                        .map { it.simplify() }
+                        .collect {
+                            store.registry["$SECTION_BASE:$FEE_PER_HOUR"] = it
+                        }
                 }
-                    .map { it.simplify() }
-            }
 
-            1 -> {
-                combine(
-                    store.registry["${SECTION_BASE}:${MONEY_PER_WEEK}"].drop(1),
-                    store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"].drop(1),
-                ) { moneyPerWeek, feePerHour ->
-                    moneyPerWeek / feePerHour
+                1 -> {
+                    combine(
+                        store.registry["$SECTION_BASE:$MONEY_PER_WEEK"],
+                        store.registry["$SECTION_BASE:$FEE_PER_HOUR"],
+                    ) { moneyPerWeek, feePerHour ->
+                        moneyPerWeek / feePerHour
+                    }
+                        .map { it.simplify() }
+                        .collect {
+                            store.registry["$SECTION_BASE:$HOURS_PER_WEEK"] = it
+                        }
                 }
-                    .map { it.simplify() }
-            }
 
-            2 -> {
-                combine(
-                    store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"].drop(1),
-                    store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"].drop(1)
-                ) { feePerHour, hoursPerWeek ->
-                    feePerHour * hoursPerWeek
+                2 -> {
+                    combine(
+                        store.registry["$SECTION_BASE:$FEE_PER_HOUR"],
+                        store.registry["$SECTION_BASE:$HOURS_PER_WEEK"],
+                    ) { feePerHour, hoursPerWeek ->
+                        feePerHour * hoursPerWeek
+                    }
+                        .map { it.simplify() }
+                        .collect {
+                            store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] = it
+                        }
                 }
             }
-
-            else -> emptyFlow()
-        }
-        val key = when (selectedIndex) {
-            0 -> "${SECTION_BASE}:${FEE_PER_HOUR}"
-            1 -> "${SECTION_BASE}:${HOURS_PER_WEEK}"
-            2 -> "${SECTION_BASE}:${MONEY_PER_WEEK}"
-            else -> null
-        }
-        key?.let {
-            store.registry[key] = reverseFlow
         }
     }
+
+    val feePerHour: ArithmeticChain? by remember {
+        store.registry["$SECTION_BASE:$FEE_PER_HOUR"]
+    }.collectAsState(initial = null)
 
     val feePerHourStr = remember(feePerHour) { feePerHour.resolve().format(decimalCount = 2) }
 
-    @Suppress("KotlinConstantConditions")
-    val newFeePerHour = singleInputContainer(
-        containerModifier = selectableContainerModifier,
+    SingleInputContainer(
+        containerModifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = PADDING_LARGE),
         label = "Fee per hour",
         value = feePerHourStr,
         clearButtonVisible = true,
-        selected = selectedIndex == ++indexCounter,
-        onSelected = selectionUpdater(indexCounter),
-    )
-
-    LaunchedEffect(Unit) {
-        store.registry["${SECTION_BASE}:${FEE_PER_HOUR}"] = newFeePerHour.map { it?.chainify() }
+        selected = selectedIndex == 0,
+        onSelected = { store.selectedIndex = flowOf(0) },
+    ) { newFeePerHour ->
+        store.registry["$SECTION_BASE:$FEE_PER_HOUR"] = newFeePerHour?.chainify()
     }
+
+    val hoursPerWeek: ArithmeticChain? by remember {
+        store.registry["$SECTION_BASE:$HOURS_PER_WEEK"]
+    }.collectAsState(initial = null)
 
     val hoursPerWeekStr = remember(hoursPerWeek) { hoursPerWeek.resolve().format(decimalCount = 0) }
 
-    val newHoursPerWeek = singleInputContainer(
-        containerModifier = selectableContainerModifier,
+    SingleInputContainer(
+        containerModifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = PADDING_LARGE),
         label = "Hours per week",
         value = hoursPerWeekStr,
         clearButtonVisible = true,
-        selected = selectedIndex == ++indexCounter,
-        onSelected = selectionUpdater(indexCounter),
-    )
-
-    LaunchedEffect(Unit) {
-        store.registry["${SECTION_BASE}:${HOURS_PER_WEEK}"] = newHoursPerWeek.map { it?.chainify() }
+        selected = selectedIndex == 1,
+        onSelected = { store.selectedIndex = flowOf(1) },
+    ) { newHoursPerWeek ->
+        store.registry["$SECTION_BASE:$HOURS_PER_WEEK"] = newHoursPerWeek?.chainify()
     }
 
     SelectableContainer(
-        modifier = selectableContainerModifier,
-        selected = selectedIndex == ++indexCounter,
-        onSelected = selectionUpdater(indexCounter),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = PADDING_LARGE),
+        selected = selectedIndex == 2,
+        onSelected = { store.selectedIndex = flowOf(2) },
     ) { modifier ->
         Column(
             modifier = modifier
