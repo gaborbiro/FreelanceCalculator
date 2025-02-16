@@ -48,13 +48,9 @@ fun ColumnScope.MoneyBreakdown(
     onPerWeekValueChanged: (ArithmeticChain?) -> Unit,
     extraContent: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
-    val expanded: Boolean? by remember {
-        store.sectionExpander[collapseId]
-    }.collectAsState(initial = true)
+    val expanded: Boolean? by remember { store.sectionExpander[collapseId] }.collectAsState(initial = true)
 
-    val daysPerWeek by remember {
-        store.daysPerWeek
-    }.collectAsState(initial = null)
+    val daysPerWeek by remember { store.daysPerWeek }.collectAsState(initial = null)
 
     FlowCard(
         modifier = Modifier

@@ -106,9 +106,9 @@ fun ColumnScope.ResultsGroup(
         }
     )
 
-    val selectedCurrency by remember {
-        store.currencySelections[SECTION_CURRENCY1]
-    }.collectAsState(initial = null)
+    val selectedCurrency by remember { store.currencySelections[SECTION_CURRENCY1] }.collectAsState(
+        initial = null
+    )
     val (fromCurrency, toCurrency) = selectedCurrency ?: (null to null)
 
     if (fromCurrency != null && toCurrency == "EUR") {

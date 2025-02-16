@@ -100,9 +100,8 @@ fun CalculatorContent(
         }
     }
 
-    val feePerHour: ArithmeticChain? by remember {
-        store.registry["$SECTION_BASE:$FEE_PER_HOUR"]
-    }.collectAsState(initial = null)
+    val feePerHour: ArithmeticChain? by remember { store.registry["$SECTION_BASE:$FEE_PER_HOUR"] }
+        .collectAsState(initial = null)
 
     val feePerHourStr = remember(feePerHour) { feePerHour.resolve().format(decimalCount = 2) }
 
@@ -119,9 +118,8 @@ fun CalculatorContent(
         store.registry["$SECTION_BASE:$FEE_PER_HOUR"] = newFeePerHour?.chainify()
     }
 
-    val hoursPerWeek: ArithmeticChain? by remember {
-        store.registry["$SECTION_BASE:$HOURS_PER_WEEK"]
-    }.collectAsState(initial = null)
+    val hoursPerWeek: ArithmeticChain? by remember { store.registry["$SECTION_BASE:$HOURS_PER_WEEK"] }
+        .collectAsState(initial = null)
 
     val hoursPerWeekStr = remember(hoursPerWeek) { hoursPerWeek.resolve().format(decimalCount = 0) }
 
