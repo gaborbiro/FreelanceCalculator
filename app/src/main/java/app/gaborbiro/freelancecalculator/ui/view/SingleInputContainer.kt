@@ -20,9 +20,9 @@ fun SingleInputContainer(
     onPinButtonTapped: suspend () -> Unit,
     onValueChanged: suspend (Double?) -> Unit,
 ) {
-    SelectableContainer(
+    PinnedContainer(
         modifier = containerModifier,
-        selected = selected,
+        pinned = selected,
         onPinButtonTapped = onPinButtonTapped,
     ) { modifier ->
         FocusPinnedInputField(

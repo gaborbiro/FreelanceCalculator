@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,19 +33,16 @@ import app.gaborbiro.freelancecalculator.ui.sections.ResultsGroup
 import app.gaborbiro.freelancecalculator.ui.sections.daysperweek.DaysPerWeekSection
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
-import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
+import app.gaborbiro.freelancecalculator.ui.view.PinnedContainer
 import app.gaborbiro.freelancecalculator.ui.view.SingleInputContainer
-import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.div
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.resolve
 import app.gaborbiro.freelancecalculator.util.simplify
 import app.gaborbiro.freelancecalculator.util.times
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,48 +52,44 @@ fun ColumnScope.CalculatorContent(
     store: Store,
     currencyRepository: CurrencyRepository,
 ) {
-    val selectedIndex by store.selectedIndex.collectAsState()
-    var directionJob: Job? = null
+    val pinnedSectionIndex by store.pinnedSectionIndex.collectAsState()
 
-    LaunchedEffect(selectedIndex) {
-        directionJob?.cancel()
-        directionJob = launch {
-            when (selectedIndex) {
-                0 -> {
-                    combine(
-                        store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"],
-                        store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"],
-                    ) { moneyPerWeek, hoursPerWeek ->
-                        moneyPerWeek / hoursPerWeek
-                    }
-                        .collect {
-                            store.registry["$SECTION_GROSS:$FEE_PER_HOUR"].emit(it.simplify())
-                        }
+    LaunchedEffect(pinnedSectionIndex) {
+        when (pinnedSectionIndex) {
+            0 -> {
+                combine(
+                    store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"],
+                    store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"],
+                ) { moneyPerWeek, hoursPerWeek ->
+                    moneyPerWeek / hoursPerWeek
                 }
+                    .collect {
+                        store.registry["$SECTION_GROSS:$FEE_PER_HOUR"].emit(it.simplify())
+                    }
+            }
 
-                1 -> {
-                    combine(
-                        store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"],
-                        store.registry["$SECTION_GROSS:$FEE_PER_HOUR"],
-                    ) { moneyPerWeek, feePerHour ->
-                        moneyPerWeek / feePerHour
-                    }
-                        .collect {
-                            store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"].emit(it.simplify())
-                        }
+            1 -> {
+                combine(
+                    store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"],
+                    store.registry["$SECTION_GROSS:$FEE_PER_HOUR"],
+                ) { moneyPerWeek, feePerHour ->
+                    moneyPerWeek / feePerHour
                 }
+                    .collect {
+                        store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"].emit(it.simplify())
+                    }
+            }
 
-                2 -> {
-                    combine(
-                        store.registry["$SECTION_GROSS:$FEE_PER_HOUR"],
-                        store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"],
-                    ) { feePerHour, hoursPerWeek ->
-                        feePerHour * hoursPerWeek
-                    }
-                        .collect {
-                            store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"].emit(it.simplify())
-                        }
+            2 -> {
+                combine(
+                    store.registry["$SECTION_GROSS:$FEE_PER_HOUR"],
+                    store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"],
+                ) { feePerHour, hoursPerWeek ->
+                    feePerHour * hoursPerWeek
                 }
+                    .collect {
+                        store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"].emit(it.simplify())
+                    }
             }
         }
     }
@@ -113,8 +105,8 @@ fun ColumnScope.CalculatorContent(
         label = "Fee per hour",
         value = feePerHour,
         clearButtonVisible = true,
-        selected = selectedIndex == 0,
-        onPinButtonTapped = { store.selectedIndex.emit(0) },
+        selected = pinnedSectionIndex == 0,
+        onPinButtonTapped = { store.pinnedSectionIndex.emit(0) },
     ) { newFeePerHour ->
         store.registry["$SECTION_GROSS:$FEE_PER_HOUR"].emit(newFeePerHour?.chainify())
     }
@@ -130,8 +122,8 @@ fun ColumnScope.CalculatorContent(
         label = "Hours per week",
         value = hoursPerWeek,
         clearButtonVisible = true,
-        selected = selectedIndex == 1,
-        onPinButtonTapped = { store.selectedIndex.emit(1) },
+        selected = pinnedSectionIndex == 1,
+        onPinButtonTapped = { store.pinnedSectionIndex.emit(1) },
     ) { newHoursPerWeek ->
         store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"].emit(newHoursPerWeek?.chainify())
     }
@@ -144,12 +136,12 @@ fun ColumnScope.CalculatorContent(
         store = store,
     )
 
-    SelectableContainer(
+    PinnedContainer(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = PADDING_LARGE),
-        selected = selectedIndex == 2,
-        onPinButtonTapped = { store.selectedIndex.emit(2) },
+        pinned = pinnedSectionIndex == 2,
+        onPinButtonTapped = { store.pinnedSectionIndex.emit(2) },
     ) { modifier ->
         Column(
             modifier = modifier

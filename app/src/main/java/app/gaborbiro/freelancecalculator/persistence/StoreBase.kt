@@ -127,7 +127,7 @@ internal abstract class StoreBase(context: Context, protected val scope: Corouti
 
     protected fun intDelegate(key: String): MutableStateFlow<Int?> {
         synchronized(key) {
-            return (prefsDelegateNullableMap[key] as PrefsDelegateNullable<Int?>?)
+            return (prefsDelegateNullableMap[key] as PrefsDelegateNullable<Int>?)
                 ?.stateFlow
                 ?: run {
                     PrefsDelegateImplNullable<Int, Int>(
@@ -160,7 +160,7 @@ internal abstract class StoreBase(context: Context, protected val scope: Corouti
 
     protected fun doubleDelegate(key: String): MutableStateFlow<Double?> {
         synchronized(key) {
-            return (prefsDelegateNullableMap[key] as PrefsDelegateNullable<Double?>?)
+            return (prefsDelegateNullableMap[key] as PrefsDelegateNullable<Double>?)
                 ?.stateFlow
                 ?: run {
                     PrefsDelegateImplNullable<Double, Double>(
@@ -193,7 +193,7 @@ internal abstract class StoreBase(context: Context, protected val scope: Corouti
 
     protected fun stringDelegate(key: String): MutableStateFlow<String?> {
         synchronized(key) {
-            return (prefsDelegateNullableMap[key] as PrefsDelegateNullable<String?>?)
+            return (prefsDelegateNullableMap[key] as PrefsDelegateNullable<String>?)
                 ?.stateFlow
                 ?: run {
                     PrefsDelegateImplNullable<String, String>(

@@ -1,5 +1,6 @@
 package app.gaborbiro.freelancecalculator.ui.view
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -19,9 +20,9 @@ import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import kotlinx.coroutines.runBlocking
 
 @Composable
-fun SelectableContainer(
+fun PinnedContainer(
     modifier: Modifier,
-    selected: Boolean,
+    pinned: Boolean,
     onPinButtonTapped: suspend () -> Unit,
     content: @Composable RowScope.(modifier: Modifier) -> Unit
 ) {
@@ -40,10 +41,10 @@ fun SelectableContainer(
                     .clickable(onClick = {
                         runBlocking { onPinButtonTapped() }
                     }),
-                painter = if (selected) painterResource(R.drawable.keep_on) else painterResource(
+                painter = if (pinned) painterResource(R.drawable.keep_on) else painterResource(
                     R.drawable.keep_off
                 ),
-                contentDescription = if (selected) "unpin this field" else "pin this field"
+                contentDescription = if (pinned) "unpin this field" else "pin this field"
             )
         }
     }
@@ -51,11 +52,12 @@ fun SelectableContainer(
 
 @ExperimentalMaterial3Api
 @Preview
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun ContainerPreview() {
-    SelectableContainer(
+    PinnedContainer(
         modifier = Modifier.padding(PADDING_LARGE),
-        selected = true,
+        pinned = true,
         onPinButtonTapped = { }) { modifier ->
         InputField(
             modifier = modifier,
@@ -68,11 +70,12 @@ private fun ContainerPreview() {
 
 @ExperimentalMaterial3Api
 @Preview
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun ContainerPreviewUnselected() {
-    SelectableContainer(
+    PinnedContainer(
         modifier = Modifier.padding(PADDING_LARGE),
-        selected = false,
+        pinned = false,
         onPinButtonTapped = { }) { modifier ->
         InputField(
             modifier = modifier,

@@ -51,11 +51,11 @@ fun FlowCard(
 @Preview
 @Composable
 private fun FlowCardPreview() {
-    SelectableContainer(
+    PinnedContainer(
         modifier = Modifier
             .fillMaxWidth()
             .padding(PADDING_LARGE),
-        selected = true,
+        pinned = true,
         onPinButtonTapped = { }
     ) { modifier ->
         FlowCard(modifier = modifier, title = "Title") {

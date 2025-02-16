@@ -16,7 +16,6 @@ import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.resolve
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,7 +45,7 @@ fun ColumnScope.FeeSection(
                 outlined = false,
                 clearButtonVisible = true,
             ) { newFee ->
-                if (store.selectedIndex.value == 2) {
+                if (store.pinnedSectionIndex.value == 2) {
                     store.registry["$sectionId:$TYPE_FEE"].emit(newFee?.chainify())
                     true
                 } else {
