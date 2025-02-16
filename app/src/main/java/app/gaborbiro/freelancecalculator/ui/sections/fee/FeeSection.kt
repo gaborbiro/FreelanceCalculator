@@ -28,12 +28,10 @@ fun ColumnScope.FeeSection(
     store: Store,
     onPerWeekValueChanged: (ArithmeticChain?) -> Unit,
 ) {
-    val fee by remember { store.registry["$sectionId:$TYPE_FEE"] }.collectAsState(initial = null)
+    val fee by remember(inputId, sectionId) { store.registry["$sectionId:$TYPE_FEE"] }.collectAsState(initial = null)
     val feeStr = remember(fee) { fee.resolve().format(decimalCount = 2) }
 
-    val builder = remember {
-        SectionBuilder(inputId, sectionId, title, store)
-    }
+    val builder = remember(inputId, sectionId, title) { SectionBuilder(inputId, sectionId, title, store) }
 
     builder.Section(
         this,

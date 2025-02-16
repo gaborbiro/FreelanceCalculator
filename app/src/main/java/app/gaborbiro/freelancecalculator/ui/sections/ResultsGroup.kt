@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -19,11 +20,10 @@ import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.MONEY_PER_WEEK
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_BASE
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_CURRENCY1
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_PT
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_CURRENCY2
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_TIMEOFF
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_UK
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_CURRENCY
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SUB_SECTION_TAX
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_TAX
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.sections.currency.CurrencySection
@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.merge
 
 
@@ -66,13 +67,9 @@ fun ColumnScope.ResultsGroup(
         remember { MutableSharedFlow(extraBufferCapacity = 1) }
     val timeOffOutput: MutableSharedFlow<ArithmeticChain?> =
         remember { MutableSharedFlow(extraBufferCapacity = 1) }
-    val ptTaxOutput: MutableSharedFlow<ArithmeticChain?> =
+    val taxOutput: MutableSharedFlow<ArithmeticChain?> =
         remember { MutableSharedFlow(extraBufferCapacity = 1) }
-    val ptTaxCurrencyOutput: MutableSharedFlow<ArithmeticChain?> =
-        remember { MutableSharedFlow(extraBufferCapacity = 1) }
-    val ukTaxOutput: MutableSharedFlow<ArithmeticChain?> =
-        remember { MutableSharedFlow(extraBufferCapacity = 1) }
-    val ukTaxCurrencyOutput: MutableSharedFlow<ArithmeticChain?> =
+    val taxCurrencyOutput: MutableSharedFlow<ArithmeticChain?> =
         remember { MutableSharedFlow(extraBufferCapacity = 1) }
 
     MoneyBreakdown(
@@ -96,6 +93,16 @@ fun ColumnScope.ResultsGroup(
         }
     )
 
+    LaunchedEffect(Unit) {
+        store.currencySelections[SECTION_CURRENCY1]
+            .combine(store.currencySelections[SECTION_CURRENCY2], { a, b -> a to b })
+            .collect { (selectedCurrency1, selectedCurrency2) ->
+                val (_, toCurrency1) = selectedCurrency1 ?: (null to null)
+                val (_, toCurrency2) = selectedCurrency2 ?: (null to null)
+                store.currencySelections[SECTION_CURRENCY2] = toCurrency1 to toCurrency2
+            }
+    }
+
     FeeSection(
         inputId = SECTION_CURRENCY1,
         sectionId = SECTION_TIMEOFF,
@@ -106,56 +113,44 @@ fun ColumnScope.ResultsGroup(
         }
     )
 
-    val selectedCurrency by remember { store.currencySelections[SECTION_CURRENCY1] }.collectAsState(
+    val selectedCurrency1 by remember { store.currencySelections[SECTION_CURRENCY1] }.collectAsState(
         initial = null
     )
-    val (fromCurrency, toCurrency) = selectedCurrency ?: (null to null)
+    val (fromCurrency1, toCurrency1) = selectedCurrency1 ?: (null to null)
 
-    if (fromCurrency != null && toCurrency == "EUR") {
-        FeeSection(
-            inputId = SECTION_TIMEOFF,
-            sectionId = "$SECTION_PT/$SUB_SECTION_TAX",
-            title = "After tax (PT '24)",
-            store = store,
-            onPerWeekValueChanged = {
-                ptTaxOutput.tryEmit(it)
-            }
-        )
-    }
+    val isUKTax = toCurrency1 == "GBP"
 
-    if (fromCurrency != null && toCurrency == "EUR") {
+    val taxSectionId = (if (isUKTax) "${SECTION_UK}/" else "") + SECTION_TAX
+
+    if (fromCurrency1 != null) {
+        if (isUKTax) {
+            UKTaxSection(
+                inputId = SECTION_TIMEOFF,
+                sectionId = taxSectionId,
+                store = store,
+                onPerWeekValueChanged = {
+                    taxOutput.tryEmit(it)
+                }
+            )
+        } else {
+            FeeSection(
+                inputId = SECTION_TIMEOFF,
+                sectionId = taxSectionId,
+                title = "After tax",
+                store = store,
+                onPerWeekValueChanged = {
+                    taxOutput.tryEmit(it)
+                }
+            )
+        }
         CurrencySection(
-            inputId = "$SECTION_PT/$SUB_SECTION_TAX",
-            sectionId = "$SECTION_PT/$SUB_SECTION_CURRENCY",
+            inputId = taxSectionId,
+            sectionId = SECTION_CURRENCY2,
             title = "Currency",
             store = store,
             currencyRepository = currencyRepository,
             onPerWeekValueChanged = {
-                ptTaxCurrencyOutput.tryEmit(it)
-            }
-        )
-    }
-
-    if (fromCurrency != null && toCurrency == "GBP") {
-        UKTaxSection(
-            inputId = SECTION_TIMEOFF,
-            sectionId = "$SECTION_UK/$SUB_SECTION_TAX",
-            store = store,
-            onPerWeekValueChanged = {
-                ukTaxOutput.tryEmit(it)
-            }
-        )
-    }
-
-    if (fromCurrency != null && toCurrency == "GBP") {
-        CurrencySection(
-            inputId = "$SECTION_UK/$SUB_SECTION_TAX",
-            sectionId = "$SECTION_UK/$SUB_SECTION_CURRENCY",
-            title = "Currency",
-            store = store,
-            currencyRepository = currencyRepository,
-            onPerWeekValueChanged = {
-                ukTaxCurrencyOutput.tryEmit(it)
+                taxCurrencyOutput.tryEmit(it)
             }
         )
     }
@@ -171,38 +166,34 @@ fun ColumnScope.ResultsGroup(
                 newMoneyPerWeek / currency1?.rate
             },
             combine(
-                ptTaxOutput,
+                taxOutput,
                 store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
                 store.exchangeRates[SECTION_CURRENCY1],
-            ) { ptTax, timeOff, currency1 ->
-                ptTax / timeOff.toFeeMultiplier() / currency1?.rate
+            ) { tax, timeOff, currency1 ->
+                tax / timeOff.toFeeMultiplier() / currency1?.rate
             },
-            combine(
-                ptTaxCurrencyOutput,
-                store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
-                store.exchangeRates[SECTION_CURRENCY1],
-                store.registry["$SECTION_PT/$SUB_SECTION_TAX:$TYPE_FEE"],
-            ) { ptTaxCurrency, timeOff, currency1, ptTaxRate ->
-                ptTaxCurrency / timeOff.toFeeMultiplier() / currency1?.rate / ptTaxCurrency.toFeeMultiplier()
-            },
-            combine(
-                ukTaxOutput,
-                store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
-                store.exchangeRates[SECTION_CURRENCY1],
-            ) { ukTaxOutput, timeOff, currency1 ->
-                ukTaxOutput / timeOff.toFeeMultiplier() / currency1?.rate
-            },
-            combine(
-                ukTaxCurrencyOutput,
-                store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
-                store.exchangeRates[SECTION_CURRENCY1],
-                store.registry["$SECTION_UK/$SUB_SECTION_TAX"],
-            ) { ukTaxCurrencyOutput, timeOff, currency1, ukTax ->
-                val n = ukTaxCurrencyOutput / timeOff.toFeeMultiplier() / currency1?.rate
-                safelyCalculate2(n, ukTax) { n, ukTax ->
-                    val newMoneyPerYear = (n * WEEKS_PER_YEAR).resolve().toDouble()
-                    val taxD = ukTax.resolve().toDouble()
-                    ((newMoneyPerYear + taxD) / WEEKS_PER_YEAR)!!
+            if (isUKTax) {
+                combine(
+                    taxCurrencyOutput,
+                    store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
+                    store.exchangeRates[SECTION_CURRENCY1],
+                    store.registry[taxSectionId],
+                ) { ukTaxCurrencyOutput, timeOff, currency1, ukTax ->
+                    val n = ukTaxCurrencyOutput / timeOff.toFeeMultiplier() / currency1?.rate
+                    safelyCalculate2(n, ukTax) { n, ukTax ->
+                        val newMoneyPerYear = (n * WEEKS_PER_YEAR).resolve().toDouble()
+                        val taxD = ukTax.resolve().toDouble()
+                        ((newMoneyPerYear + taxD) / WEEKS_PER_YEAR)!!
+                    }
+                }
+            } else {
+                combine(
+                    taxCurrencyOutput,
+                    store.registry["$SECTION_TIMEOFF:$TYPE_FEE"],
+                    store.exchangeRates[SECTION_CURRENCY1],
+                    store.registry["$taxSectionId:$TYPE_FEE"],
+                ) { ptTaxCurrency, timeOff, currency1, ptTaxRate ->
+                    ptTaxCurrency / timeOff.toFeeMultiplier() / currency1?.rate / ptTaxCurrency.toFeeMultiplier()
                 }
             }
         )

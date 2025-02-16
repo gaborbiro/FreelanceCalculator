@@ -35,7 +35,7 @@ fun ColumnScope.UKTaxSection(
 ) {
     val taxCalculator: TaxCalculator = remember { TaxCalculator_England_23_24() }
 
-    val taxInfo: TaxBreakdownUIModel? = remember {
+    val taxInfo: TaxBreakdownUIModel? = remember(inputId, sectionId) {
         store.registry["$inputId:$MONEY_PER_WEEK"].map {
             val perYear: Double? = (it * WEEKS_PER_YEAR)
                 ?.resolve()

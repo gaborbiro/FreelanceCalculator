@@ -41,11 +41,11 @@ fun ColumnScope.CurrencySection(
     currencyRepository: CurrencyRepository,
     onPerWeekValueChanged: (ArithmeticChain?) -> Unit,
 ) {
-    val selectedCurrencies by remember { store.currencySelections[sectionId] }.collectAsState(initial = null)
+    val selectedCurrencies by remember(sectionId) { store.currencySelections[sectionId] }.collectAsState(initial = null)
 
     val (fromCurrency, toCurrency) = selectedCurrencies ?: (null to null)
 
-    var rateUIModel: ExchangeRateUIModel by remember {
+    var rateUIModel: ExchangeRateUIModel by remember(inputId, sectionId) {
         mutableStateOf(
             ExchangeRateUIModel(
                 rate = null,
@@ -56,7 +56,7 @@ fun ColumnScope.CurrencySection(
     }
 
     if (fromCurrency != null && toCurrency != null) {
-        rateUIModel = remember { store.exchangeRates[sectionId] }
+        rateUIModel = remember(sectionId) { store.exchangeRates[sectionId] }
             .collectAsState(initial = null)
             .value ?: rateUIModel
 
@@ -101,7 +101,7 @@ fun ColumnScope.CurrencySection(
         }
     }
 
-    val builder = remember {
+    val builder = remember(inputId, sectionId, title) {
         SectionBuilder(inputId, sectionId, title, store)
     }
 

@@ -41,7 +41,7 @@ class SectionBuilder(
     ) {
         val multiplier: Flow<Double?> = remember { getMultiplier(store) }
 
-        val displayedMoneyPerWeek = remember {
+        val displayedMoneyPerWeek = remember(inputId, sectionId) {
             combine(
                 store.registry["$inputId:$MONEY_PER_WEEK"],
                 multiplier

@@ -38,12 +38,11 @@ interface Store {
         }
 
         const val SECTION_BASE = "base"
-        const val SECTION_PT = "pt"
         const val SECTION_UK = "uk"
         const val SECTION_TIMEOFF = "time_off"
         const val SECTION_CURRENCY1 = "currency1"
-        const val SUB_SECTION_TAX = "tax"
-        const val SUB_SECTION_CURRENCY = "currency"
+        const val SECTION_TAX = "tax"
+        const val SECTION_CURRENCY2 = "currency2"
         const val FEE_PER_HOUR = "feePerHour"
         const val HOURS_PER_WEEK = "hoursPerWeek"
         const val MONEY_PER_WEEK = "moneyPerWeek"
