@@ -37,7 +37,7 @@ interface Store {
                 MapPrefsDelegate.dummyImplementation()
         }
 
-        const val SECTION_BASE = "base"
+        const val SECTION_GROSS = "gross"
         const val SECTION_UK = "uk"
         const val SECTION_TIMEOFF = "time_off"
         const val SECTION_CURRENCY1 = "currency1"

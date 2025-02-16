@@ -3,11 +3,14 @@
 package app.gaborbiro.freelancecalculator.ui
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,15 +21,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.FEE_PER_HOUR
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.HOURS_PER_WEEK
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.MONEY_PER_WEEK
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_BASE
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_GROSS
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.sections.ResultsGroup
+import app.gaborbiro.freelancecalculator.ui.sections.daysperweek.DaysPerWeekSection
 import app.gaborbiro.freelancecalculator.ui.theme.FreelanceCalculatorTheme
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
 import app.gaborbiro.freelancecalculator.ui.view.SelectableContainer
@@ -47,7 +52,7 @@ import kotlinx.coroutines.launch
 
 @SuppressLint("FlowOperatorInvokedInComposition")
 @Composable
-fun CalculatorContent(
+fun ColumnScope.CalculatorContent(
     store: Store,
     currencyRepository: CurrencyRepository,
 ) {
@@ -60,47 +65,47 @@ fun CalculatorContent(
             when (selectedIndex) {
                 0 -> {
                     combine(
-                        store.registry["$SECTION_BASE:$MONEY_PER_WEEK"],
-                        store.registry["$SECTION_BASE:$HOURS_PER_WEEK"],
+                        store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"],
+                        store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"],
                     ) { moneyPerWeek, hoursPerWeek ->
                         moneyPerWeek / hoursPerWeek
                     }
                         .map { it.simplify() }
                         .collect {
-                            store.registry["$SECTION_BASE:$FEE_PER_HOUR"] = it
+                            store.registry["$SECTION_GROSS:$FEE_PER_HOUR"] = it
                         }
                 }
 
                 1 -> {
                     combine(
-                        store.registry["$SECTION_BASE:$MONEY_PER_WEEK"],
-                        store.registry["$SECTION_BASE:$FEE_PER_HOUR"],
+                        store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"],
+                        store.registry["$SECTION_GROSS:$FEE_PER_HOUR"],
                     ) { moneyPerWeek, feePerHour ->
                         moneyPerWeek / feePerHour
                     }
                         .map { it.simplify() }
                         .collect {
-                            store.registry["$SECTION_BASE:$HOURS_PER_WEEK"] = it
+                            store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"] = it
                         }
                 }
 
                 2 -> {
                     combine(
-                        store.registry["$SECTION_BASE:$FEE_PER_HOUR"],
-                        store.registry["$SECTION_BASE:$HOURS_PER_WEEK"],
+                        store.registry["$SECTION_GROSS:$FEE_PER_HOUR"],
+                        store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"],
                     ) { feePerHour, hoursPerWeek ->
                         feePerHour * hoursPerWeek
                     }
                         .map { it.simplify() }
                         .collect {
-                            store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] = it
+                            store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"] = it
                         }
                 }
             }
         }
     }
 
-    val feePerHour: ArithmeticChain? by remember { store.registry["$SECTION_BASE:$FEE_PER_HOUR"] }
+    val feePerHour: ArithmeticChain? by remember { store.registry["$SECTION_GROSS:$FEE_PER_HOUR"] }
         .collectAsState(initial = null)
 
     val feePerHourStr = remember(feePerHour) { feePerHour.resolve().format(decimalCount = 2) }
@@ -113,12 +118,12 @@ fun CalculatorContent(
         value = feePerHourStr,
         clearButtonVisible = true,
         selected = selectedIndex == 0,
-        onSelected = { store.selectedIndex = flowOf(0) },
+        onPinButtonTapped = { store.selectedIndex = flowOf(0) },
     ) { newFeePerHour ->
-        store.registry["$SECTION_BASE:$FEE_PER_HOUR"] = newFeePerHour?.chainify()
+        store.registry["$SECTION_GROSS:$FEE_PER_HOUR"] = newFeePerHour?.chainify()
     }
 
-    val hoursPerWeek: ArithmeticChain? by remember { store.registry["$SECTION_BASE:$HOURS_PER_WEEK"] }
+    val hoursPerWeek: ArithmeticChain? by remember { store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"] }
         .collectAsState(initial = null)
 
     val hoursPerWeekStr = remember(hoursPerWeek) { hoursPerWeek.resolve().format(decimalCount = 0) }
@@ -131,17 +136,25 @@ fun CalculatorContent(
         value = hoursPerWeekStr,
         clearButtonVisible = true,
         selected = selectedIndex == 1,
-        onSelected = { store.selectedIndex = flowOf(1) },
+        onPinButtonTapped = { store.selectedIndex = flowOf(1) },
     ) { newHoursPerWeek ->
-        store.registry["$SECTION_BASE:$HOURS_PER_WEEK"] = newHoursPerWeek?.chainify()
+        store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"] = newHoursPerWeek?.chainify()
     }
+
+    DaysPerWeekSection(
+        modifier = Modifier
+            .wrapContentSize()
+            .align(Alignment.End)
+            .padding(end = PADDING_LARGE),
+        store = store,
+    )
 
     SelectableContainer(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = PADDING_LARGE),
         selected = selectedIndex == 2,
-        onSelected = { store.selectedIndex = flowOf(2) },
+        onPinButtonTapped = { store.selectedIndex = flowOf(2) },
     ) { modifier ->
         Column(
             modifier = modifier
@@ -157,6 +170,7 @@ fun CalculatorContent(
 
 @Preview
 @Composable
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 private fun CalculatorContentPreview() {
     FreelanceCalculatorTheme(dynamicColor = false) {
         Surface(

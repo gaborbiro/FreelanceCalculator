@@ -56,7 +56,7 @@ private fun FlowCardPreview() {
             .fillMaxWidth()
             .padding(PADDING_LARGE),
         selected = true,
-        onSelected = { }
+        onPinButtonTapped = { }
     ) { modifier ->
         FlowCard(modifier = modifier, title = "Title") {
             InputField(

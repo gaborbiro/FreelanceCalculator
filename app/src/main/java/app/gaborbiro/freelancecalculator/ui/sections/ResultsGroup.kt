@@ -5,29 +5,25 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.MONEY_PER_WEEK
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_BASE
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_GROSS
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_CURRENCY1
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_CURRENCY2
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_TAX
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_TIMEOFF
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_UK
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_TAX
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.TYPE_FEE
 import app.gaborbiro.freelancecalculator.repo.currency.domain.CurrencyRepository
 import app.gaborbiro.freelancecalculator.ui.sections.currency.CurrencySection
-import app.gaborbiro.freelancecalculator.ui.sections.daysperweek.DaysPerWeekSection
 import app.gaborbiro.freelancecalculator.ui.sections.fee.FeeSection
 import app.gaborbiro.freelancecalculator.ui.sections.fee.toFeeMultiplier
 import app.gaborbiro.freelancecalculator.ui.sections.tax.UKTaxSection
@@ -41,7 +37,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.merge
 
 
@@ -51,17 +46,10 @@ fun ColumnScope.ResultsGroup(
     store: Store,
     currencyRepository: CurrencyRepository,
 ) {
-    DaysPerWeekSection(
-        modifier = Modifier
-            .wrapContentSize()
-            .align(Alignment.End),
-        store = store,
-    )
-
-    val baseMoneyPerWeek = remember { store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] }
+    val outputMoneyPerWeek = remember { store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"] }
         .collectAsState(initial = null)
 
-    val baseOutput: MutableSharedFlow<ArithmeticChain?> =
+    val grossOutput: MutableSharedFlow<ArithmeticChain?> =
         remember { MutableSharedFlow(extraBufferCapacity = 1) }
     val currency1Output: MutableSharedFlow<ArithmeticChain?> =
         remember { MutableSharedFlow(extraBufferCapacity = 1) }
@@ -73,17 +61,17 @@ fun ColumnScope.ResultsGroup(
         remember { MutableSharedFlow(extraBufferCapacity = 1) }
 
     MoneyBreakdown(
-        collapseId = "$SECTION_BASE:collapse",
-        title = "Base",
+        collapseId = "$SECTION_GROSS:collapse",
+        title = "Gross",
         store = store,
-        moneyPerWeek = baseMoneyPerWeek.value,
+        moneyPerWeek = outputMoneyPerWeek.value,
         onPerWeekValueChanged = {
-            baseOutput.tryEmit(it)
+            grossOutput.tryEmit(it)
         }
     )
 
     CurrencySection(
-        inputId = SECTION_BASE,
+        inputId = SECTION_GROSS,
         sectionId = SECTION_CURRENCY1,
         title = "Currency",
         store = store,
@@ -157,7 +145,7 @@ fun ColumnScope.ResultsGroup(
 
     LaunchedEffect(Unit) {
         val reverseMoneyPerWeek: Flow<ArithmeticChain?> = merge(
-            baseOutput,
+            grossOutput,
             currency1Output,
             combine(
                 timeOffOutput,
@@ -199,7 +187,7 @@ fun ColumnScope.ResultsGroup(
         )
 
         reverseMoneyPerWeek.distinctUntilChanged().collect {
-            store.registry["$SECTION_BASE:$MONEY_PER_WEEK"] = it
+            store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"] = it
         }
     }
 }

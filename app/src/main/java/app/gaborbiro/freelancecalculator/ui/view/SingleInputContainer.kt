@@ -17,14 +17,13 @@ fun SingleInputContainer(
     value: String,
     clearButtonVisible: Boolean = false,
     selected: Boolean,
-    onSelected: () -> Unit,
+    onPinButtonTapped: () -> Unit,
     onValueChanged: (Double?) -> Unit,
 ) {
-
     SelectableContainer(
         modifier = containerModifier,
         selected = selected,
-        onSelected = onSelected,
+        onPinButtonTapped = onPinButtonTapped,
     ) { modifier ->
         FocusPinnedInputField(
             modifier = modifier,
@@ -49,7 +48,7 @@ private fun SingleInputContainerPreview() {
         value = "80.00",
         clearButtonVisible = true,
         selected = true,
-        onSelected = { },
+        onPinButtonTapped = { },
         onValueChanged = { },
     )
 }
