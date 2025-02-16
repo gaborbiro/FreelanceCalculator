@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface Store {
 
-    var selectedIndex: MutableStateFlow<Int?>
+    var selectedIndex: MutableStateFlow<Int>
 
     var daysPerWeek: MutableStateFlow<Double?>
 
@@ -25,7 +25,7 @@ interface Store {
             selectedIndex: Int = 2,
             daysPerWeek: Double = 5.0,
         ) = object : Store {
-            override var selectedIndex: MutableStateFlow<Int?> = MutableStateFlow(selectedIndex)
+            override var selectedIndex: MutableStateFlow<Int> = MutableStateFlow(selectedIndex)
             override var daysPerWeek: MutableStateFlow<Double?> = MutableStateFlow(daysPerWeek)
             override val sectionExpander: MapPrefsDelegate<Boolean> =
                 MapPrefsDelegate.dummyImplementation()

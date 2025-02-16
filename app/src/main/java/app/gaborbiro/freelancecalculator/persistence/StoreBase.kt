@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
 import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegate
+import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegateNullable
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,8 @@ internal abstract class StoreBase(context: Context, protected val scope: Corouti
     protected val gson = Gson()
     protected val prefs: DataStore<Preferences> = context.dataStore
     private val prefsDelegateMap: MutableMap<String, PrefsDelegate<*>> = mutableMapOf()
+    private val prefsDelegateNullableMap: MutableMap<String, PrefsDelegateNullable<*>> =
+        mutableMapOf()
     private val mapPrefsDelegateMap: MutableMap<String, MapPrefsDelegate<*>> = mutableMapOf()
 
     companion object {
@@ -31,6 +34,24 @@ internal abstract class StoreBase(context: Context, protected val scope: Corouti
 
     protected inline fun <reified T> gsonSerializablePrefsDelegate(
         key: String,
+    ): PrefsDelegateNullable<T> {
+        synchronized(key) {
+            return (prefsDelegateNullableMap[key] as PrefsDelegateNullable<T>?) ?: run {
+                PrefsDelegateImplNullable(
+                    key = stringPreferencesKey(key),
+                    scope = scope,
+                    prefs = prefs,
+                    mapper = getPrefsDelegateMapper(CACHE_SIZE, T::class.java),
+                ).also {
+                    prefsDelegateNullableMap[key] = it
+                }
+            }
+        }
+    }
+
+    protected inline fun <reified T> gsonSerializablePrefsDelegate(
+        key: String,
+        default: T,
     ): PrefsDelegate<T> {
         synchronized(key) {
             return (prefsDelegateMap[key] as PrefsDelegate<T>?) ?: run {
@@ -39,6 +60,7 @@ internal abstract class StoreBase(context: Context, protected val scope: Corouti
                     scope = scope,
                     prefs = prefs,
                     mapper = getPrefsDelegateMapper(CACHE_SIZE, T::class.java),
+                    default = default,
                 ).also {
                     prefsDelegateMap[key] = it
                 }
@@ -105,13 +127,30 @@ internal abstract class StoreBase(context: Context, protected val scope: Corouti
 
     protected fun intDelegate(key: String): MutableStateFlow<Int?> {
         synchronized(key) {
-            return (prefsDelegateMap[key] as PrefsDelegate<Int?>?)
+            return (prefsDelegateNullableMap[key] as PrefsDelegateNullable<Int?>?)
                 ?.stateFlow
                 ?: run {
-                    PrefsDelegateImpl<Int, Int>(
+                    PrefsDelegateImplNullable<Int, Int>(
                         key = intPreferencesKey(name = key),
                         scope = scope,
                         prefs = prefs,
+                    ).also {
+                        prefsDelegateNullableMap[key] = it
+                    }.stateFlow
+                }
+        }
+    }
+
+    protected fun intDelegate(key: String, default: Int): MutableStateFlow<Int> {
+        synchronized(key) {
+            return (prefsDelegateMap[key] as PrefsDelegate<Int>?)
+                ?.stateFlow
+                ?: run {
+                    PrefsDelegateImpl(
+                        key = intPreferencesKey(name = key),
+                        scope = scope,
+                        prefs = prefs,
+                        default = default,
                     ).also {
                         prefsDelegateMap[key] = it
                     }.stateFlow
@@ -121,13 +160,30 @@ internal abstract class StoreBase(context: Context, protected val scope: Corouti
 
     protected fun doubleDelegate(key: String): MutableStateFlow<Double?> {
         synchronized(key) {
-            return (prefsDelegateMap[key] as PrefsDelegate<Double?>?)
+            return (prefsDelegateNullableMap[key] as PrefsDelegateNullable<Double?>?)
                 ?.stateFlow
                 ?: run {
-                    PrefsDelegateImpl<Double, Double>(
+                    PrefsDelegateImplNullable<Double, Double>(
                         key = doublePreferencesKey(name = key),
                         scope = scope,
                         prefs = prefs,
+                    ).also {
+                        prefsDelegateNullableMap[key] = it
+                    }.stateFlow
+                }
+        }
+    }
+
+    protected fun doubleDelegate(key: String, default: Double): MutableStateFlow<Double> {
+        synchronized(key) {
+            return (prefsDelegateMap[key] as PrefsDelegate<Double>?)
+                ?.stateFlow
+                ?: run {
+                    PrefsDelegateImpl(
+                        key = doublePreferencesKey(name = key),
+                        scope = scope,
+                        prefs = prefs,
+                        default = default,
                     ).also {
                         prefsDelegateMap[key] = it
                     }.stateFlow
@@ -137,13 +193,30 @@ internal abstract class StoreBase(context: Context, protected val scope: Corouti
 
     protected fun stringDelegate(key: String): MutableStateFlow<String?> {
         synchronized(key) {
-            return (prefsDelegateMap[key] as PrefsDelegate<String?>?)
+            return (prefsDelegateNullableMap[key] as PrefsDelegateNullable<String?>?)
+                ?.stateFlow
+                ?: run {
+                    PrefsDelegateImplNullable<String, String>(
+                        key = stringPreferencesKey(name = key),
+                        scope = scope,
+                        prefs = prefs,
+                    ).also {
+                        prefsDelegateNullableMap[key] = it
+                    }.stateFlow
+                }
+        }
+    }
+
+    protected fun stringDelegate(key: String, default: String): MutableStateFlow<String> {
+        synchronized(key) {
+            return (prefsDelegateMap[key] as PrefsDelegate<String>?)
                 ?.stateFlow
                 ?: run {
                     PrefsDelegateImpl<String, String>(
                         key = stringPreferencesKey(name = key),
                         scope = scope,
                         prefs = prefs,
+                        default = default,
                     ).also {
                         prefsDelegateMap[key] = it
                     }.stateFlow

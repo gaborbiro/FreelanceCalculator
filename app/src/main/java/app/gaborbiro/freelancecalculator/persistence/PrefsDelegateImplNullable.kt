@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegate
+import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegateNullable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -21,21 +22,20 @@ import kotlinx.coroutines.sync.withLock
  *
  * If you don't need this, make [T] and [S] the same and set the [mapper] to null.
  */
-class PrefsDelegateImpl<T, S>(
+class PrefsDelegateImplNullable<T, S>(
     private val key: Preferences.Key<S>,
     private val scope: CoroutineScope,
     private val prefs: DataStore<Preferences>,
     private val mapper: Mapper<T, S>? = null,
-    private val default: T,
-) : PrefsDelegate<T> {
+) : PrefsDelegateNullable<T> {
 
-    private val _stateFlow = MutableStateFlow(default)
-    override val stateFlow: MutableStateFlow<T> get() = _stateFlow
+    private val _stateFlow = MutableStateFlow<T?>(null)
+    override val stateFlow: MutableStateFlow<T?> get() = _stateFlow
     private val mutex = Mutex()
 
     init {
         readInitialValue()
-        persistValues()
+        observeStateFlow()
     }
 
     private fun readInitialValue() {
@@ -44,11 +44,11 @@ class PrefsDelegateImpl<T, S>(
                 mapper
                     ?.fromStoreType(prefs[key])
                     ?: prefs[key] as T?
-            } ?: default
+            }
         }
     }
 
-    private fun persistValues() {
+    private fun observeStateFlow() {
         scope.launch {
             _stateFlow.collect { value ->
                 mutex.withLock {

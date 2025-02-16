@@ -5,9 +5,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
 import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegate
+import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegateNullable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.sync.Mutex
 
 /**
  * A partial map implementation that knows how to get/set a DataStore of type Preferences.
@@ -27,8 +27,9 @@ class MapPrefsDelegateImpl<T, S>(
     private val mapper: Mapper<T, S>? = null,
 ) : MapPrefsDelegate<T> {
 
+    private val prefsDelegateNullableMap: MutableMap<Preferences.Key<S>, PrefsDelegateNullable<T>> =
+        mutableMapOf()
     private val prefsDelegateMap: MutableMap<Preferences.Key<S>, PrefsDelegate<T>> = mutableMapOf()
-    private val mutex = Mutex()
 
     private val keyCache: LruCache<String, Preferences.Key<S>> =
         object : LruCache<String, Preferences.Key<S>>(100) {
@@ -41,10 +42,23 @@ class MapPrefsDelegateImpl<T, S>(
     override operator fun get(subKey: String): MutableStateFlow<T?> {
         val key: Preferences.Key<S> = keyCache["${key}_${subKey}"]!!
         synchronized(key) {
+            return prefsDelegateNullableMap[key]
+                ?.stateFlow
+                ?: run {
+                    PrefsDelegateImplNullable(key, scope, prefs, mapper)
+                        .also { prefsDelegateNullableMap[key] = it }
+                        .stateFlow
+                }
+        }
+    }
+
+    override operator fun get(subKey: String, default: T): MutableStateFlow<T> {
+        val key: Preferences.Key<S> = keyCache["${key}_${subKey}"]!!
+        synchronized(key) {
             return prefsDelegateMap[key]
                 ?.stateFlow
                 ?: run {
-                    PrefsDelegateImpl(key, scope, prefs, mapper)
+                    PrefsDelegateImpl(key, scope, prefs, mapper, default)
                         .also { prefsDelegateMap[key] = it }
                         .stateFlow
                 }

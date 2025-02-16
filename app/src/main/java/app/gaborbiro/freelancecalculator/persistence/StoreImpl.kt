@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 internal open class StoreImpl(context: Context, scope: CoroutineScope) : StoreBase(context, scope),
     Store {
 
-    override var selectedIndex: MutableStateFlow<Int?> = intDelegate("SELECTED_INDEX")
+    override var selectedIndex: MutableStateFlow<Int> = intDelegate("SELECTED_INDEX", default = 2)
 
     override var daysPerWeek: MutableStateFlow<Double?> = doubleDelegate("DAYS_PER_WEEK")
 
