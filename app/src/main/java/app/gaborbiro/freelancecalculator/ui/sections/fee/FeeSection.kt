@@ -16,6 +16,7 @@ import app.gaborbiro.freelancecalculator.util.ArithmeticChain
 import app.gaborbiro.freelancecalculator.util.chainify
 import app.gaborbiro.freelancecalculator.util.hide.format
 import app.gaborbiro.freelancecalculator.util.resolve
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,10 +27,11 @@ fun ColumnScope.FeeSection(
     sectionId: String,
     title: String,
     store: Store,
-    onPerWeekValueChanged: (ArithmeticChain?) -> Unit,
+    onPerWeekValueChanged: suspend (ArithmeticChain?) -> Unit,
 ) {
-    val fee by remember(inputId, sectionId) { store.registry["$sectionId:$TYPE_FEE"] }.collectAsState(initial = null)
-    val feeStr = remember(fee) { fee.resolve().format(decimalCount = 2) }
+    val fee by store.registry["$sectionId:$TYPE_FEE"]
+        .map { it.resolve().format(decimalCount = 2) }
+        .collectAsState(initial = "")
 
     val builder = remember(inputId, sectionId, title) { SectionBuilder(inputId, sectionId, title, store) }
 
@@ -40,11 +42,16 @@ fun ColumnScope.FeeSection(
                 modifier = Modifier
                     .wrapContentSize(),
                 label = "%",
-                value = feeStr,
+                value = fee,
                 outlined = false,
                 clearButtonVisible = true,
             ) { newFee ->
-                store.registry["$sectionId:$TYPE_FEE"] = newFee?.chainify()
+                if (store.selectedIndex.value == 2) {
+                    store.registry["$sectionId:$TYPE_FEE"].emit(newFee?.chainify())
+                    true
+                } else {
+                    false
+                }
             }
         },
         getMultiplier = {

@@ -40,7 +40,7 @@ fun TaxBreakdownSection(
                 .padding(bottom = PADDING_LARGE, top = PADDING_LARGE)
                 .weight(.85f)
         ) {
-            val expanded: Boolean? by sectionExpander[collapseId].collectAsState(initial = true)
+            val expanded: Boolean? by sectionExpander[collapseId].collectAsState()
 
             AnimatedVisibility(
                 enter = fadeIn(),

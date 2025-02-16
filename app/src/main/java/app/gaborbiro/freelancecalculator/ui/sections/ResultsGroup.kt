@@ -15,9 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.MONEY_PER_WEEK
-import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_GROSS
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_CURRENCY1
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_CURRENCY2
+import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_GROSS
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_TAX
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_TIMEOFF
 import app.gaborbiro.freelancecalculator.persistence.domain.Store.Companion.SECTION_UK
@@ -46,8 +46,7 @@ fun ColumnScope.ResultsGroup(
     store: Store,
     currencyRepository: CurrencyRepository,
 ) {
-    val outputMoneyPerWeek = remember { store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"] }
-        .collectAsState(initial = null)
+    val outputMoneyPerWeek = store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"].collectAsState()
 
     val grossOutput: MutableSharedFlow<ArithmeticChain?> =
         remember { MutableSharedFlow(extraBufferCapacity = 1) }
@@ -66,7 +65,7 @@ fun ColumnScope.ResultsGroup(
         store = store,
         moneyPerWeek = outputMoneyPerWeek.value,
         onPerWeekValueChanged = {
-            grossOutput.tryEmit(it)
+            grossOutput.emit(it)
         }
     )
 
@@ -77,7 +76,7 @@ fun ColumnScope.ResultsGroup(
         store = store,
         currencyRepository = currencyRepository,
         onPerWeekValueChanged = {
-            currency1Output.tryEmit(it)
+            currency1Output.emit(it)
         }
     )
 
@@ -87,7 +86,7 @@ fun ColumnScope.ResultsGroup(
             .collect { (selectedCurrency1, selectedCurrency2) ->
                 val (_, toCurrency1) = selectedCurrency1 ?: (null to null)
                 val (_, toCurrency2) = selectedCurrency2 ?: (null to null)
-                store.currencySelections[SECTION_CURRENCY2] = toCurrency1 to toCurrency2
+                store.currencySelections[SECTION_CURRENCY2].emit(toCurrency1 to toCurrency2)
             }
     }
 
@@ -97,13 +96,11 @@ fun ColumnScope.ResultsGroup(
         title = "Time off",
         store = store,
         onPerWeekValueChanged = {
-            println(timeOffOutput.tryEmit(it))
+            println(timeOffOutput.emit(it))
         }
     )
 
-    val selectedCurrency1 by remember { store.currencySelections[SECTION_CURRENCY1] }.collectAsState(
-        initial = null
-    )
+    val selectedCurrency1 by store.currencySelections[SECTION_CURRENCY1].collectAsState()
     val (fromCurrency1, toCurrency1) = selectedCurrency1 ?: (null to null)
 
     val isUKTax = toCurrency1 == "GBP"
@@ -117,7 +114,7 @@ fun ColumnScope.ResultsGroup(
                 sectionId = taxSectionId,
                 store = store,
                 onPerWeekValueChanged = {
-                    taxOutput.tryEmit(it)
+                    taxOutput.emit(it)
                 }
             )
         } else {
@@ -127,7 +124,7 @@ fun ColumnScope.ResultsGroup(
                 title = "After tax",
                 store = store,
                 onPerWeekValueChanged = {
-                    taxOutput.tryEmit(it)
+                    taxOutput.emit(it)
                 }
             )
         }
@@ -138,7 +135,7 @@ fun ColumnScope.ResultsGroup(
             store = store,
             currencyRepository = currencyRepository,
             onPerWeekValueChanged = {
-                taxCurrencyOutput.tryEmit(it)
+                taxCurrencyOutput.emit(it)
             }
         )
     }
@@ -187,7 +184,7 @@ fun ColumnScope.ResultsGroup(
         )
 
         reverseMoneyPerWeek.distinctUntilChanged().collect {
-            store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"] = it
+            store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"].emit(it)
         }
     }
 }

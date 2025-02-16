@@ -5,12 +5,11 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegate
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlin.reflect.KProperty
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * A delegate that knows how to read/write a DataStore of type Preferences. This simplifies
@@ -29,27 +28,41 @@ class PrefsDelegateImpl<T, S>(
     private val mapper: Mapper<T, S>? = null,
 ) : PrefsDelegate<T> {
 
-    override operator fun getValue(thisRef: Any?, property: KProperty<*>): Flow<T?> {
-        return prefs.data.map { prefs ->
-            mapper
-                ?.fromStoreType(prefs[key])
-                ?: prefs[key] as T?
-        }.distinctUntilChanged()
+    private val _stateFlow = MutableStateFlow<T?>(null)
+    override val stateFlow: MutableStateFlow<T?> get() = _stateFlow
+    private val mutex = Mutex()
+
+    init {
+        readInitialValue()
+        observeStateFlow()
     }
 
-    /**
-     * Stops previous flows being read (if any)
-     */
-    override operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Flow<T?>) {
+    private fun readInitialValue() {
         scope.launch {
-            val latest = value.last()
-            prefs.edit { pref ->
-                if (latest != null) {
-                    pref[key] = mapper
-                        ?.let { it.toStoreType(latest)!! }
-                        ?: latest as S
-                } else {
-                    pref.remove(key)
+            _stateFlow.value = prefs.data.firstOrNull()?.let { prefs ->
+                mapper
+                    ?.fromStoreType(prefs[key])
+                    ?: prefs[key] as T?
+            }
+        }
+    }
+
+    private fun observeStateFlow() {
+        scope.launch {
+            _stateFlow.collect { value ->
+                mutex.withLock {
+                    prefs.edit { pref ->
+                        if (value != null) {
+                            val mappedValue = mapper
+                                ?.let { it.toStoreType(value)!! }
+                                ?: value as S
+                            if (pref[key] != mappedValue) {
+                                pref[key] = mappedValue
+                            }
+                        } else {
+                            pref.remove(key)
+                        }
+                    }
                 }
             }
         }

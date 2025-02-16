@@ -21,7 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,7 +29,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rxjava2.subscribeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
@@ -54,7 +53,6 @@ import kotlinx.coroutines.launch
 
 @OptIn(
     ExperimentalMaterial3Api::class,
-    ExperimentalComposeUiApi::class
 )
 @Composable
 fun currencySelector(
@@ -63,10 +61,12 @@ fun currencySelector(
     selectedCurrency: String?,
     currencyRepository: CurrencyRepository,
 ): Flow<String?> {
-    val output = remember(label) { MutableSharedFlow<String?>(
-        replay = 1,
-        onBufferOverflow = BufferOverflow.SUSPEND
-    ) }
+    val output = remember(label) {
+        MutableSharedFlow<String?>(
+            replay = 1,
+            onBufferOverflow = BufferOverflow.SUSPEND
+        )
+    }
 
     var expanded by remember {
         mutableStateOf(false)
@@ -102,8 +102,8 @@ fun currencySelector(
             selectedCurrency?.let {
                 if (data.data.contains(it).not()) {
                     currentText = TextFieldValue("")
-                    SideEffect {
-                        output.tryEmit(null)
+                    LaunchedEffect(currencies) {
+                        output.emit(null)
                     }
                 }
             }
@@ -188,7 +188,7 @@ fun currencySelector(
                             currentText = currentText.copy(text = filteredCurrencies[0])
                             scope.launch {
                                 delay(200)
-                                output.tryEmit(filteredCurrencies[0])
+                                output.emit(filteredCurrencies[0])
                                 filter = null
                             }
                         }
@@ -237,7 +237,7 @@ fun currencySelector(
                                     currentText = TextFieldValue(currency)
                                     scope.launch {
                                         delay(200)
-                                        output.tryEmit(currency)
+                                        output.emit(currency)
                                         filter = null
                                     }
                                 },

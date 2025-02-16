@@ -17,8 +17,8 @@ fun SingleInputContainer(
     value: String,
     clearButtonVisible: Boolean = false,
     selected: Boolean,
-    onPinButtonTapped: () -> Unit,
-    onValueChanged: (Double?) -> Unit,
+    onPinButtonTapped: suspend () -> Unit,
+    onValueChanged: suspend (Double?) -> Unit,
 ) {
     SelectableContainer(
         modifier = containerModifier,

@@ -37,19 +37,15 @@ class SectionBuilder(
         scope: ColumnScope,
         extraContent: (@Composable ColumnScope.() -> Unit)? = null,
         getMultiplier: Store.() -> Flow<Double?>,
-        onPerWeekValueChanged: (ArithmeticChain?) -> Unit,
+        onPerWeekValueChanged: suspend (ArithmeticChain?) -> Unit,
     ) {
         val multiplier: Flow<Double?> = remember { getMultiplier(store) }
 
-        val displayedMoneyPerWeek = remember(inputId, sectionId) {
-            combine(
-                store.registry["$inputId:$MONEY_PER_WEEK"],
-                multiplier
-            ) { f1, f2 -> (f1 * f2) }
+        val displayedMoneyPerWeek =
+            combine(store.registry["$inputId:$MONEY_PER_WEEK"], multiplier) { f1, f2 -> (f1 * f2) }
                 .onEach {
-                    store.registry["$sectionId:$MONEY_PER_WEEK"] = it
+                    store.registry["$sectionId:$MONEY_PER_WEEK"].emit(it)
                 }
-        }
 
         val moneyPerWeek by displayedMoneyPerWeek.collectAsState(initial = null)
         val multiplierState by multiplier.collectAsState(initial = null)

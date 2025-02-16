@@ -33,6 +33,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
+import kotlinx.coroutines.runBlocking
 
 @ExperimentalMaterial3Api
 @Composable
@@ -43,7 +44,7 @@ fun InputField(
     outlined: Boolean,
     clearButtonVisible: Boolean = false,
     onFocusChanged: ((isFocused: Boolean) -> Unit)? = null,
-    onValueChanged: (String) -> Unit,
+    onValueChanged: suspend (String) -> Unit,
 ) {
     val customTextSelectionColors = TextSelectionColors(
         handleColor = Color.Transparent,
@@ -62,7 +63,9 @@ fun InputField(
             singleLine = true,
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Decimal),
             onValueChange = {
-                onValueChanged(it.text)
+                runBlocking {
+                    onValueChanged(it.text)
+                }
             },
             visualTransformation = DecimalGroupingDecorator(),
             cursorBrush = SolidColor(LocalContentColor.current),
@@ -78,7 +81,11 @@ fun InputField(
                     label = label,
                     innerTextField = it,
                     clearButtonVisible = clearButtonVisible,
-                    onCleared = { onValueChanged("") },
+                    onCleared = {
+                        runBlocking {
+                            onValueChanged("")
+                        }
+                    },
                 )
             } else {
                 UnderlineDecorationBox(
@@ -86,7 +93,11 @@ fun InputField(
                     label = label,
                     innerTextField = it,
                     clearButtonVisible = clearButtonVisible,
-                    onCleared = { onValueChanged("") },
+                    onCleared = {
+                        runBlocking {
+                            onValueChanged("")
+                        }
+                    },
                 )
             }
         }

@@ -31,12 +31,12 @@ fun ColumnScope.UKTaxSection(
     inputId: String,
     sectionId: String,
     store: Store,
-    onPerWeekValueChanged: (ArithmeticChain?) -> Unit,
+    onPerWeekValueChanged: suspend (ArithmeticChain?) -> Unit,
 ) {
     val taxCalculator: TaxCalculator = remember { TaxCalculator_England_23_24() }
 
-    val taxInfo: TaxBreakdownUIModel? = remember(inputId, sectionId) {
-        store.registry["$inputId:$MONEY_PER_WEEK"].map {
+    val taxInfo: TaxBreakdownUIModel? = store.registry["$inputId:$MONEY_PER_WEEK"]
+        .map {
             val perYear: Double? = (it * WEEKS_PER_YEAR)
                 ?.resolve()
                 ?.toDouble()
@@ -47,13 +47,13 @@ fun ColumnScope.UKTaxSection(
                 val totalTax = incomeTax.totalTax + nic2Tax.totalTax + nic4Tax.totalTax
 
                 if (totalTax > 0) {
-                    store.registry[sectionId] = totalTax.chainify()
+                    store.registry[sectionId].emit(totalTax.chainify())
                 }
 
                 if (incomeTax.breakdown.isNotEmpty() && nic4Tax.breakdown.isNotEmpty()) {
                     val afterTaxPerWeek: ArithmeticChain? = (it - totalTax) / WEEKS_PER_YEAR
 
-                    store.registry["$sectionId:$MONEY_PER_WEEK"] = afterTaxPerWeek
+                    store.registry["$sectionId:$MONEY_PER_WEEK"].emit(afterTaxPerWeek)
 
                     TaxBreakdownUIModel(
                         incomeTax = "${incomeTax.totalTax.format(decimalCount = 2)} (allowance: ${incomeTax.breakdown[0].bracket.amount.format()})",
@@ -68,7 +68,7 @@ fun ColumnScope.UKTaxSection(
                 }
             }
         }
-    }.collectAsState(initial = null).value
+        .collectAsState(initial = null).value
 
     taxInfo?.let {
         MoneyBreakdown(

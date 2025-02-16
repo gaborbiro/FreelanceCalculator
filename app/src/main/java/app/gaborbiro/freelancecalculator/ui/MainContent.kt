@@ -45,18 +45,18 @@ import app.gaborbiro.freelancecalculator.util.simplify
 import app.gaborbiro.freelancecalculator.util.times
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("FlowOperatorInvokedInComposition")
 @Composable
 fun ColumnScope.CalculatorContent(
     store: Store,
     currencyRepository: CurrencyRepository,
 ) {
-    val selectedIndex by remember { store.selectedIndex }.collectAsState(initial = 2)
+    val selectedIndex by store.selectedIndex.collectAsState()
     var directionJob: Job? = null
 
     LaunchedEffect(selectedIndex) {
@@ -70,9 +70,8 @@ fun ColumnScope.CalculatorContent(
                     ) { moneyPerWeek, hoursPerWeek ->
                         moneyPerWeek / hoursPerWeek
                     }
-                        .map { it.simplify() }
                         .collect {
-                            store.registry["$SECTION_GROSS:$FEE_PER_HOUR"] = it
+                            store.registry["$SECTION_GROSS:$FEE_PER_HOUR"].emit(it.simplify())
                         }
                 }
 
@@ -83,9 +82,8 @@ fun ColumnScope.CalculatorContent(
                     ) { moneyPerWeek, feePerHour ->
                         moneyPerWeek / feePerHour
                     }
-                        .map { it.simplify() }
                         .collect {
-                            store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"] = it
+                            store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"].emit(it.simplify())
                         }
                 }
 
@@ -96,49 +94,46 @@ fun ColumnScope.CalculatorContent(
                     ) { feePerHour, hoursPerWeek ->
                         feePerHour * hoursPerWeek
                     }
-                        .map { it.simplify() }
                         .collect {
-                            store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"] = it
+                            store.registry["$SECTION_GROSS:$MONEY_PER_WEEK"].emit(it.simplify())
                         }
                 }
             }
         }
     }
 
-    val feePerHour: ArithmeticChain? by remember { store.registry["$SECTION_GROSS:$FEE_PER_HOUR"] }
-        .collectAsState(initial = null)
-
-    val feePerHourStr = remember(feePerHour) { feePerHour.resolve().format(decimalCount = 2) }
+    val feePerHour by store.registry["$SECTION_GROSS:$FEE_PER_HOUR"]
+        .map { it.resolve().format(decimalCount = 2) }
+        .collectAsState(initial = "")
 
     SingleInputContainer(
         containerModifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = PADDING_LARGE),
         label = "Fee per hour",
-        value = feePerHourStr,
+        value = feePerHour,
         clearButtonVisible = true,
         selected = selectedIndex == 0,
-        onPinButtonTapped = { store.selectedIndex = flowOf(0) },
+        onPinButtonTapped = { store.selectedIndex.emit(0) },
     ) { newFeePerHour ->
-        store.registry["$SECTION_GROSS:$FEE_PER_HOUR"] = newFeePerHour?.chainify()
+        store.registry["$SECTION_GROSS:$FEE_PER_HOUR"].emit(newFeePerHour?.chainify())
     }
 
-    val hoursPerWeek: ArithmeticChain? by remember { store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"] }
-        .collectAsState(initial = null)
-
-    val hoursPerWeekStr = remember(hoursPerWeek) { hoursPerWeek.resolve().format(decimalCount = 0) }
+    val hoursPerWeek by store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"]
+        .map { it.resolve().format(decimalCount = 0) }
+        .collectAsState(initial = "")
 
     SingleInputContainer(
         containerModifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = PADDING_LARGE),
         label = "Hours per week",
-        value = hoursPerWeekStr,
+        value = hoursPerWeek,
         clearButtonVisible = true,
         selected = selectedIndex == 1,
-        onPinButtonTapped = { store.selectedIndex = flowOf(1) },
+        onPinButtonTapped = { store.selectedIndex.emit(1) },
     ) { newHoursPerWeek ->
-        store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"] = newHoursPerWeek?.chainify()
+        store.registry["$SECTION_GROSS:$HOURS_PER_WEEK"].emit(newHoursPerWeek?.chainify())
     }
 
     DaysPerWeekSection(
@@ -154,7 +149,7 @@ fun ColumnScope.CalculatorContent(
             .fillMaxWidth()
             .padding(horizontal = PADDING_LARGE),
         selected = selectedIndex == 2,
-        onPinButtonTapped = { store.selectedIndex = flowOf(2) },
+        onPinButtonTapped = { store.selectedIndex.emit(2) },
     ) { modifier ->
         Column(
             modifier = modifier

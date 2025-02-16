@@ -13,6 +13,7 @@ import app.gaborbiro.freelancecalculator.persistence.domain.MapPrefsDelegate
 import app.gaborbiro.freelancecalculator.persistence.domain.PrefsDelegate
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("preferences")
@@ -20,35 +21,65 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("p
 internal abstract class StoreBase(context: Context, protected val scope: CoroutineScope) {
 
     protected val gson = Gson()
-
     protected val prefs: DataStore<Preferences> = context.dataStore
+    private val prefsDelegateMap: MutableMap<String, PrefsDelegate<*>> = mutableMapOf()
+    private val mapPrefsDelegateMap: MutableMap<String, MapPrefsDelegate<*>> = mutableMapOf()
+
+    companion object {
+        private const val CACHE_SIZE = 1 * 1024 * 1024 // 1MB
+    }
 
     protected inline fun <reified T> gsonSerializablePrefsDelegate(
         key: String,
-        size: Int = 1 * 1024 * 1024, // 1MB
     ): PrefsDelegate<T> {
-        return PrefsDelegateImpl(
-            key = stringPreferencesKey(key),
-            scope = scope,
-            prefs = prefs,
-            mapper = getPrefsDelegateMapper(size, T::class.java),
-        )
+        synchronized(key) {
+            return (prefsDelegateMap[key] as PrefsDelegate<T>?) ?: run {
+                PrefsDelegateImpl(
+                    key = stringPreferencesKey(key),
+                    scope = scope,
+                    prefs = prefs,
+                    mapper = getPrefsDelegateMapper(CACHE_SIZE, T::class.java),
+                ).also {
+                    prefsDelegateMap[key] = it
+                }
+            }
+        }
     }
 
     protected inline fun <reified T> gsonSerializableMapPrefsDelegate(
         keyBase: String,
-        size: Int = 1 * 1024 * 1024, // 1MB
     ): MapPrefsDelegate<T> {
-        return MapPrefsDelegateImpl(
-            key = keyBase,
-            createKey = { stringPreferencesKey(it) },
-            scope = scope,
-            prefs = prefs,
-            mapper = getPrefsDelegateMapper(size, T::class.java),
-        )
+        synchronized(keyBase) {
+            return (mapPrefsDelegateMap[keyBase] as MapPrefsDelegate<T>?) ?: run {
+                MapPrefsDelegateImpl(
+                    key = keyBase,
+                    createKey = { stringPreferencesKey(it) },
+                    scope = scope,
+                    prefs = prefs,
+                    mapper = getPrefsDelegateMapper(CACHE_SIZE, T::class.java),
+                ).also {
+                    mapPrefsDelegateMap[keyBase] = it
+                }
+            }
+        }
     }
 
-    fun <T> getPrefsDelegateMapper(size: Int, type: Class<T>): Mapper<T, String> =
+    protected fun booleanMapPrefsDelegate(keyBase: String): MapPrefsDelegate<Boolean> {
+        synchronized(keyBase) {
+            return (mapPrefsDelegateMap[keyBase] as MapPrefsDelegate<Boolean>?) ?: run {
+                MapPrefsDelegateImpl<Boolean, Boolean>(
+                    key = keyBase,
+                    createKey = { booleanPreferencesKey(it) },
+                    scope = scope,
+                    prefs = prefs,
+                ).also {
+                    mapPrefsDelegateMap[keyBase] = it
+                }
+            }
+        }
+    }
+
+    private fun <T> getPrefsDelegateMapper(size: Int, type: Class<T>): Mapper<T, String> =
         object : Mapper<T, String> {
 
             private val cache: LruCache<String, T> = LruCache(size)
@@ -72,36 +103,51 @@ internal abstract class StoreBase(context: Context, protected val scope: Corouti
             }
         }
 
-    protected fun intDelegate(key: String): PrefsDelegate<Int> {
-        return PrefsDelegateImpl(
-            key = intPreferencesKey(key),
-            scope = scope,
-            prefs = prefs,
-        )
+    protected fun intDelegate(key: String): MutableStateFlow<Int?> {
+        synchronized(key) {
+            return (prefsDelegateMap[key] as PrefsDelegate<Int?>?)
+                ?.stateFlow
+                ?: run {
+                    PrefsDelegateImpl<Int, Int>(
+                        key = intPreferencesKey(name = key),
+                        scope = scope,
+                        prefs = prefs,
+                    ).also {
+                        prefsDelegateMap[key] = it
+                    }.stateFlow
+                }
+        }
     }
 
-    protected fun doubleDelegate(key: String): PrefsDelegate<Double> {
-        return PrefsDelegateImpl(
-            key = doublePreferencesKey(key),
-            scope = scope,
-            prefs = prefs,
-        )
+    protected fun doubleDelegate(key: String): MutableStateFlow<Double?> {
+        synchronized(key) {
+            return (prefsDelegateMap[key] as PrefsDelegate<Double?>?)
+                ?.stateFlow
+                ?: run {
+                    PrefsDelegateImpl<Double, Double>(
+                        key = doublePreferencesKey(name = key),
+                        scope = scope,
+                        prefs = prefs,
+                    ).also {
+                        prefsDelegateMap[key] = it
+                    }.stateFlow
+                }
+        }
     }
 
-    protected fun stringDelegate(key: String): PrefsDelegate<String> {
-        return PrefsDelegateImpl(
-            key = stringPreferencesKey(key),
-            scope = scope,
-            prefs = prefs,
-        )
-    }
-
-    protected fun booleanMapPrefsDelegate(keyBase: String): MapPrefsDelegate<Boolean> {
-        return MapPrefsDelegateImpl(
-            key = keyBase,
-            createKey = { booleanPreferencesKey(it) },
-            scope = scope,
-            prefs = prefs,
-        )
+    protected fun stringDelegate(key: String): MutableStateFlow<String?> {
+        synchronized(key) {
+            return (prefsDelegateMap[key] as PrefsDelegate<String?>?)
+                ?.stateFlow
+                ?: run {
+                    PrefsDelegateImpl<String, String>(
+                        key = stringPreferencesKey(name = key),
+                        scope = scope,
+                        prefs = prefs,
+                    ).also {
+                        prefsDelegateMap[key] = it
+                    }.stateFlow
+                }
+        }
     }
 }

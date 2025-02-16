@@ -39,9 +39,9 @@ fun ColumnScope.CurrencySection(
     title: String,
     store: Store,
     currencyRepository: CurrencyRepository,
-    onPerWeekValueChanged: (ArithmeticChain?) -> Unit,
+    onPerWeekValueChanged: suspend (ArithmeticChain?) -> Unit,
 ) {
-    val selectedCurrencies by remember(sectionId) { store.currencySelections[sectionId] }.collectAsState(initial = null)
+    val selectedCurrencies by store.currencySelections[sectionId].collectAsState()
 
     val (fromCurrency, toCurrency) = selectedCurrencies ?: (null to null)
 
@@ -56,9 +56,7 @@ fun ColumnScope.CurrencySection(
     }
 
     if (fromCurrency != null && toCurrency != null) {
-        rateUIModel = remember(sectionId) { store.exchangeRates[sectionId] }
-            .collectAsState(initial = null)
-            .value ?: rateUIModel
+        rateUIModel = store.exchangeRates[sectionId].collectAsState().value ?: rateUIModel
 
         val rateResult = remember(fromCurrency, toCurrency) {
             if (fromCurrency != toCurrency) {
@@ -87,7 +85,7 @@ fun ColumnScope.CurrencySection(
                         since = "Refreshed at:\n${rateResult.data.since}",
                         error = false,
                     )
-                    store.exchangeRates[sectionId] = rateUIModel
+                    store.exchangeRates[sectionId].emit(rateUIModel)
                 }
 
                 is Lce.Error -> {
@@ -135,7 +133,7 @@ fun ColumnScope.CurrencySection(
                             newFromCurrency != fromCurrency || newToCurrency != toCurrency
                         }
                         .collect {
-                            store.currencySelections[sectionId] = it
+                            store.currencySelections[sectionId].emit(it)
                         }
                 }
 

@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import app.gaborbiro.freelancecalculator.persistence.domain.Store
 import app.gaborbiro.freelancecalculator.ui.view.FocusPinnedInputField
 import app.gaborbiro.freelancecalculator.util.hide.format
-import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -17,7 +16,7 @@ fun DaysPerWeekSection(
     modifier: Modifier,
     store: Store,
 ) {
-    val daysPerWeek by remember { store.daysPerWeek }.collectAsState(initial = null)
+    val daysPerWeek by store.daysPerWeek.collectAsState()
 
     FocusPinnedInputField(
         modifier = modifier,
@@ -26,6 +25,6 @@ fun DaysPerWeekSection(
         outlined = false,
         clearButtonVisible = true,
     ) { newDaysPerWeek ->
-        store.daysPerWeek = flowOf(newDaysPerWeek)
+        store.daysPerWeek.emit(newDaysPerWeek)
     }
 }

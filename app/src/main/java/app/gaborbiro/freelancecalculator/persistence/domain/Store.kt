@@ -2,15 +2,15 @@ package app.gaborbiro.freelancecalculator.persistence.domain
 
 import app.gaborbiro.freelancecalculator.ui.model.ExchangeRateUIModel
 import app.gaborbiro.freelancecalculator.util.ArithmeticChain
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 
 interface Store {
 
-    var selectedIndex: Flow<Int?>
+    var selectedIndex: MutableStateFlow<Int?>
 
-    var daysPerWeek: Flow<Double?>
+    var daysPerWeek: MutableStateFlow<Double?>
 
     val sectionExpander: MapPrefsDelegate<Boolean>
 
@@ -25,8 +25,8 @@ interface Store {
             selectedIndex: Int = 2,
             daysPerWeek: Double = 5.0,
         ) = object : Store {
-            override var selectedIndex: Flow<Int?> = flowOf(selectedIndex)
-            override var daysPerWeek: Flow<Double?> = flowOf(daysPerWeek)
+            override var selectedIndex: MutableStateFlow<Int?> = MutableStateFlow(selectedIndex)
+            override var daysPerWeek: MutableStateFlow<Double?> = MutableStateFlow(daysPerWeek)
             override val sectionExpander: MapPrefsDelegate<Boolean> =
                 MapPrefsDelegate.dummyImplementation()
             override val currencySelections: MapPrefsDelegate<Pair<String?, String?>> =

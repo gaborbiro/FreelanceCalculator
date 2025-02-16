@@ -16,12 +16,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.gaborbiro.freelancecalculator.R
 import app.gaborbiro.freelancecalculator.ui.theme.PADDING_LARGE
+import kotlinx.coroutines.runBlocking
 
 @Composable
 fun SelectableContainer(
     modifier: Modifier,
     selected: Boolean,
-    onPinButtonTapped: () -> Unit,
+    onPinButtonTapped: suspend () -> Unit,
     content: @Composable RowScope.(modifier: Modifier) -> Unit
 ) {
     Card(modifier = modifier) {
@@ -36,7 +37,9 @@ fun SelectableContainer(
             Icon(
                 modifier = Modifier
                     .padding(16.dp)
-                    .clickable(onClick = onPinButtonTapped),
+                    .clickable(onClick = {
+                        runBlocking { onPinButtonTapped() }
+                    }),
                 painter = if (selected) painterResource(R.drawable.keep_on) else painterResource(
                     R.drawable.keep_off
                 ),
